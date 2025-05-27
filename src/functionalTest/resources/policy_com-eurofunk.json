@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Policy To Match Group com.eurofunk",
+    "rootCondition": {
+      "type": "COORDINATES",
+      "group": "com.eurofunk.*",
+      "operator": "MATCHES"
+    }
+  }
+]

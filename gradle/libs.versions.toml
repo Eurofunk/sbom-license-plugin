@@ -1,0 +1,16 @@
+[versions]
+jackson = "2.19.0"
+junit-jupiter = "5.12.1"
+
+
+[libraries]
+classgraph = { module = "io.github.classgraph:classgraph", version = "4.8.179" }
+cyclonedx-java = { module = "org.cyclonedx:cyclonedx-core-java", version = "10.2.1" }
+equalsverifier = { module = "nl.jqno.equalsverifier:equalsverifier", version = "4.0" }
+jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
+spdx-utils = { module = "org.ossreviewtoolkit.utils:spdx-utils", version = "59.2.0" }
+
+[bundles]
+jackson = ["jackson-annotations", "jackson-databind"]
