@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Policy To Match Group com.example",
+    "rootCondition": {
+      "type": "COORDINATES",
+      "group": "com.example.*",
+      "operator": "MATCHES"
+    }
+  }
+]

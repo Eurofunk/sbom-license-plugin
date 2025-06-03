@@ -1,0 +1,17 @@
+# SBOM license plugin
+
+The main purpose of this plugin is to provide a way how to check licenses of dependencies in the Gradle project based on
+the SBOM (software bill of material) file. To use this plugin, you need to have a valid SBOM file in your project. For
+generation of SBOM file you can use the [cyclonedx gradle plugin](https://github.com/CycloneDX/cyclonedx-gradle-plugin).
+
+## Usage
+
+Apply the plugin to your project:
+
+```kotlin
+plugins {
+    id("com.eurofunk.gradle.sbom-license-plugin") version "{{project.version}}"
+}
+```
+
+### 

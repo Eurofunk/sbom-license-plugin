@@ -1,0 +1,23 @@
+[
+  {
+    "name": "custom-group-1",
+    "licenses": [
+      "Apache-2.0",
+      "MIT"
+    ]
+  },
+  {
+    "name": "custom-group-2",
+    "licenses": [
+      "GPL-3.0-only",
+      "LGPL-3.0-only"
+    ]
+  },
+  {
+    "name": "custom-group-3",
+    "licenses": [
+      "BSD-2-Clause",
+      "BSD-3-Clause"
+    ]
+  }
+]

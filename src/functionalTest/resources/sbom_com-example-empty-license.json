@@ -1,0 +1,90 @@
+{
+  "bomFormat" : "CycloneDX",
+  "specVersion" : "1.6",
+  "version" : 1,
+  "metadata" : {
+    "timestamp" : "2025-05-15T07:13:01Z",
+    "tools" : {
+      "components" : [
+        {
+          "type" : "application",
+          "author" : "CycloneDX",
+          "name" : "cyclonedx-gradle-plugin",
+          "version" : "2.3.0"
+        }
+      ],
+      "services" : [ ]
+    },
+    "component" : {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/eocs.modules.backend.libs.libraries.audit/api@0.0.1?project_path=%3Amodules%3Abackend%3Alibs%3Alibraries%3Aaudit%3Aapi",
+      "group" : "eocs.modules.backend.libs.libraries.audit",
+      "name" : "api",
+      "version" : "0.0.1",
+      "purl" : "pkg:maven/eocs.modules.backend.libs.libraries.audit/api@0.0.1?project_path=%3Amodules%3Abackend%3Alibs%3Alibraries%3Aaudit%3Aapi",
+      "modified" : false,
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "ssh://git@gitlab.example.com:eocs/backbone.git"
+        }
+      ]
+    },
+    "licenses" : [ ]
+  },
+  "components" : [
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/com.example.test/some-library@1.5.18?type=jar",
+      "group" : "com.example.test",
+      "name" : "some-library",
+      "version" : "1.5.18",
+      "description" : "com.example.test some-library",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "05bd5f5d61a7efe5d5ae362df43377b5"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "fc371f3fc97a639de2d67947cffb7518ec5e3d40"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "3e1533d0321f8815eef46750aee0111b41554f9a4644c3c4d2d404744b09f60f"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "48edf62d089a13dc3a572aedebf9f881d61690983f03831838c79caecb13cf749786ea215156d9bf39c1b936fcc32ba37dd265f7d191708c5e24ba3ba654ee50"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "840863faef2c85de6b54250d9506df083dac8da479480ec8b069e19e68196b469d7e57da3f437f3d984fec61a2e37071"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "91c81faf4b98cd2a3a309dc60cd426b821f23a67ab48405168013a2dc4c53ebfb8826c690bf7dedf15d753f5342205d2"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "3efea23a6f915d59a448fb1b17bb4d0d1505b48131ffc7a092ea0210553b98ad"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "c1f29a1dd22c4de89cd62b929fa8ec75c9b9fc01d293eb0c9a9a55476c9e079a240ca83ef73d732ee79555bc36a6674f2c2ffafd67519cedd82c46b7a666e3d3"
+        }
+      ],
+      "purl" : "pkg:maven/com.example.test/some-library@1.5.18?type=jar",
+      "modified" : false,
+      "properties" : [
+        {
+          "name" : "cdx:maven:package:test",
+          "value" : "false"
+        }
+      ]
+    }
+  ],
+  "dependencies" : [
+
+  ]
+}

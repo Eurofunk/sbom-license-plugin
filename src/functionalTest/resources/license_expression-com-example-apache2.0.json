@@ -1,0 +1,12 @@
+[
+  {
+    "group": "com.example.*",
+    "licenses": [
+      {
+        "expression": {
+          "expression": "Apache-2.0"
+        }
+      }
+    ]
+  }
+]
