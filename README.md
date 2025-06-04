@@ -1,5 +1,8 @@
 # SBOM license plugin
 
+[![CI Status](https://github.com/eurofunk/sbom-license-plugin/actions/workflows/gradle.yml/badge.svg)](https://github.com/eurofunk/sbom-license-plugin/actions/workflows/gradle.yml)
+![GitHub license](https://img.shields.io/github/license/eurofunk/sbom-license-plugin)
+
 The main purpose of this plugin is to provide a way how to check licenses of dependencies in the Gradle project based on
 the SBOM (software bill of material) file. To use this plugin, you need to have a valid SBOM file in your project. For
 generation of SBOM file you can use the [cyclonedx gradle plugin](https://github.com/CycloneDX/cyclonedx-gradle-plugin).
