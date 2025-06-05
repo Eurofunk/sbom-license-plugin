@@ -1,6 +1,5 @@
 plugins {
-    `java-gradle-plugin`
-    `maven-publish`
+    id("com.gradle.plugin-publish") version "1.3.1"
 }
 
 group = "com.eurofunk.gradle"
