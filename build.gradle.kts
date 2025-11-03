@@ -4,6 +4,8 @@ plugins {
     signing
 }
 
+import org.gradle.plugins.signing.Sign
+
 group = "io.github.eurofunk"
 version = "0.0.1"
 
@@ -129,6 +131,9 @@ signing {
             project.hasProperty("signing.gnupg.homeDir") ||
             System.getenv("SIGNING_GNUPG_EXECUTABLE") != null ||
             System.getenv("SIGNING_GNUPG_HOME_DIR") != null
+    val hasSigningCredentials = hasInMemoryKeys || hasGpgConfiguration
+
+    isRequired = hasSigningCredentials
 
     when {
         hasInMemoryKeys -> {
@@ -146,9 +151,13 @@ signing {
         }
     }
 
-    if (hasInMemoryKeys || hasGpgConfiguration) {
+    if (hasSigningCredentials) {
         sign(publishing.publications["mavenJava"])
     }
+}
+
+tasks.withType<Sign>().configureEach {
+    onlyIf { signing.required.getOrElse(false) }
 }
 
 
