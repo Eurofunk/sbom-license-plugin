@@ -217,7 +217,11 @@ that local verification builds continue to succeed.
 When the project builds in GitHub Actions, reference the organization or repository
 secrets as environment variables so Gradle can pick them up automatically. Secrets
 exposed via the workflow `env` section are available to every step; you can also
-scope them to the publish job only.
+scope them to the publish job only. Because the signing key is multi-line, the
+workflow writes the values to `~/.gradle/gradle.properties` before invoking Gradle,
+which ensures the full key material (including embedded newlines or `\n` escape
+sequences) is preserved. The build script also accepts base64-encoded keys via the
+same variables.
 
 ```yaml
 jobs:
@@ -237,11 +241,26 @@ jobs:
           distribution: 'temurin'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+      - name: Configure Gradle publishing credentials
+        run: |
+          mkdir -p "$HOME/.gradle"
+          cat <<EOF > "$HOME/.gradle/gradle.properties"
+          ossrhTokenUsername=${OSSRH_TOKEN_USERNAME}
+          ossrhTokenPassword=${OSSRH_TOKEN_PASSWORD}
+          signingKeyId=${SIGNING_KEY_ID}
+          signingPassword=${SIGNING_PASSWORD}
+          signingKey=${SIGNING_KEY}
+          EOF
+          chmod 600 "$HOME/.gradle/gradle.properties"
       - name: Publish artifacts
         run: ./gradlew publish
+      - name: Clean up Gradle credentials
+        if: always()
+        run: rm -f "$HOME/.gradle/gradle.properties"
 ```
 
 Gradle reads the variables listed above (and their legacy fallbacks) directly from the
 environment, so no extra configuration is required. If you prefer Gradle properties
 instead, write the secrets to `~/.gradle/gradle.properties` in a preceding workflow
-step and delete the file afterwards to avoid leaking credentials in later jobs.
+step and delete the file afterwards to avoid leaking credentials in later jobs. The
+example above performs these steps automatically.

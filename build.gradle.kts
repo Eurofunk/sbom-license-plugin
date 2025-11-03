@@ -4,6 +4,7 @@ plugins {
     signing
 }
 
+import java.util.Base64
 import org.gradle.plugins.signing.Sign
 
 group = "io.github.eurofunk"
@@ -50,8 +51,10 @@ val ossrhTokenUsername = (findProperty("ossrhTokenUsername") as String?)
     ?: System.getenv("OSSRH_TOKEN_USERNAME")
 val ossrhTokenPassword = (findProperty("ossrhTokenPassword") as String?)
     ?: System.getenv("OSSRH_TOKEN_PASSWORD")
-val ossrhUsername = (findProperty("ossrhUsername") as String?) ?: System.getenv("OSSRH_USERNAME")
-val ossrhPassword = (findProperty("ossrhPassword") as String?) ?: System.getenv("OSSRH_PASSWORD")
+val ossrhUsername = (findProperty("ossrhUsername") as String?)
+    ?: System.getenv("OSSRH_USERNAME")
+val ossrhPassword = (findProperty("ossrhPassword") as String?)
+    ?: System.getenv("OSSRH_PASSWORD")
 
 val resolvedOssrhUsername = ossrhTokenUsername ?: ossrhUsername
 val resolvedOssrhPassword = ossrhTokenPassword ?: ossrhPassword
@@ -119,12 +122,41 @@ publishing {
 }
 
 signing {
-    val signingKeyId = findProperty("signingKeyId") as String? ?: System.getenv("SIGNING_KEY_ID")
-    val signingKey = findProperty("signingKey") as String? ?: System.getenv("SIGNING_KEY")
-    val signingPassword = findProperty("signingPassword") as String? ?: System.getenv("SIGNING_PASSWORD")
+    fun decodeSigningKey(rawKey: String?): String? {
+        if (rawKey.isNullOrBlank()) {
+            return rawKey
+        }
+
+        val normalized = rawKey.replace("\\n", "\n").trim()
+        if (normalized.contains("BEGIN PGP")) {
+            return normalized
+        }
+
+        return runCatching {
+            val decoded = String(Base64.getDecoder().decode(normalized))
+            val decodedNormalized = decoded.replace("\\n", "\n").trim()
+            decodedNormalized.takeIf { it.contains("BEGIN PGP") }
+        }.getOrNull() ?: normalized
+    }
+
+    val signingKeyId = (findProperty("signingKeyId") as String?)
+        ?: (findProperty("signing.keyId") as String?)
+        ?: System.getenv("SIGNING_KEY_ID")
+        ?: System.getenv("SIGNING_KEYID")
+    val rawSigningKey = (findProperty("signingKey") as String?)
+        ?: (findProperty("signing.key") as String?)
+        ?: (findProperty("signingKeyBase64") as String?)
+        ?: (findProperty("signing.keyBase64") as String?)
+        ?: System.getenv("SIGNING_KEY")
+        ?: System.getenv("SIGNING_KEY_BASE64")
+    val signingKey = decodeSigningKey(rawSigningKey)?.takeIf { it.isNotBlank() }
+    val signingPassword = (findProperty("signingPassword") as String?)
+        ?: (findProperty("signing.password") as String?)
+        ?: System.getenv("SIGNING_PASSWORD")
+        ?: System.getenv("SIGNING_PASSPHRASE")
     val gpgKeyName =
         (findProperty("signing.gnupg.keyName") as String?) ?: System.getenv("SIGNING_GNUPG_KEY_NAME")
-    val hasInMemoryKeys = !signingKey.isNullOrBlank() && !signingPassword.isNullOrBlank()
+    val hasInMemoryKeys = signingKey != null && signingPassword != null
     val hasGpgConfiguration =
         !gpgKeyName.isNullOrBlank() || project.hasProperty("signing.gnupg.keyName") ||
             project.hasProperty("signing.gnupg.executable") ||
@@ -137,10 +169,12 @@ signing {
 
     when {
         hasInMemoryKeys -> {
+            val keyMaterial = signingKey!!
+            val password = signingPassword!!
             if (signingKeyId.isNullOrBlank()) {
-                useInMemoryPgpKeys(signingKey, signingPassword)
+                useInMemoryPgpKeys(keyMaterial, password)
             } else {
-                useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+                useInMemoryPgpKeys(signingKeyId, keyMaterial, password)
             }
         }
         hasGpgConfiguration -> {
