@@ -140,10 +140,30 @@ signing {
         }.getOrNull() ?: normalized
     }
 
-    val signingKeyId = (findProperty("signingKeyId") as String?)
-        ?: (findProperty("signing.keyId") as String?)
-        ?: System.getenv("SIGNING_KEY_ID")
-        ?: System.getenv("SIGNING_KEYID")
+    fun normalizeSigningKeyId(candidate: String?): String? {
+        val trimmed = candidate?.trim().orEmpty()
+        if (trimmed.isEmpty()) {
+            return null
+        }
+
+        val keyIdPattern = Regex("^(0x)?[0-9A-Fa-f]{8,40}$")
+        return if (keyIdPattern.matches(trimmed)) {
+            trimmed
+        } else {
+            logger.warn(
+                "Ignoring signing key ID because it is not a valid hexadecimal key identifier. " +
+                    "Use values such as 'ABCDEF1234567890' or '0xABCDEF1234567890'."
+            )
+            null
+        }
+    }
+
+    val signingKeyId = normalizeSigningKeyId(
+        (findProperty("signingKeyId") as String?)
+            ?: (findProperty("signing.keyId") as String?)
+            ?: System.getenv("SIGNING_KEY_ID")
+            ?: System.getenv("SIGNING_KEYID")
+    )
     val rawSigningKey = (findProperty("signingKey") as String?)
         ?: (findProperty("signing.key") as String?)
         ?: (findProperty("signingKeyBase64") as String?)
