@@ -211,3 +211,37 @@ that local verification builds continue to succeed.
 - [ ] `signing.gnupg.keyName` / `SIGNING_GNUPG_KEY_NAME` *(only if using the local GPG executable)*
   - If you prefer Gradle to call the local `gpg` binary, set this to the key name returned by `gpg --list-secret-keys` (for example `User Name <user@example.com>`).
   - Ensure `signing.gnupg.executable` points to the desired GPG binary and that the key is available in the local keyring or CI agent.
+
+### Using GitHub Actions secrets
+
+When the project builds in GitHub Actions, reference the organization or repository
+secrets as environment variables so Gradle can pick them up automatically. Secrets
+exposed via the workflow `env` section are available to every step; you can also
+scope them to the publish job only.
+
+```yaml
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      OSSRH_TOKEN_USERNAME: ${{ secrets.OSSRH_TOKEN_USERNAME }}
+      OSSRH_TOKEN_PASSWORD: ${{ secrets.OSSRH_TOKEN_PASSWORD }}
+      SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+      SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+      SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }} # optional when the key contains its own ID
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Publish artifacts
+        run: ./gradlew publish
+```
+
+Gradle reads the variables listed above (and their legacy fallbacks) directly from the
+environment, so no extra configuration is required. If you prefer Gradle properties
+instead, write the secrets to `~/.gradle/gradle.properties` in a preceding workflow
+step and delete the file afterwards to avoid leaking credentials in later jobs.
