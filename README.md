@@ -164,7 +164,10 @@ tasks.checkLicenses {
 Store secrets in `~/.gradle/gradle.properties`, your CI secret store, or environment
 variables as noted below. The checklist assumes that the project is published through
 the Sonatype OSSRH infrastructure with token-based authentication (preferred) and
-falls back to legacy username/password credentials if necessary.
+falls back to legacy username/password credentials if necessary. When these
+credentials (and the signing keys described below) are absent, running
+`./gradlew publish` will skip the remote Sonatype repository and signing tasks so
+that local verification builds continue to succeed.
 
 - [ ] Confirm OSSRH project access
   - Sign in at <https://s01.oss.sonatype.org/> with the Sonatype account that owns the

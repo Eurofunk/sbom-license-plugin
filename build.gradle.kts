@@ -44,6 +44,18 @@ gradlePlugin {
     }
 }
 
+val ossrhTokenUsername = (findProperty("ossrhTokenUsername") as String?)
+    ?: System.getenv("OSSRH_TOKEN_USERNAME")
+val ossrhTokenPassword = (findProperty("ossrhTokenPassword") as String?)
+    ?: System.getenv("OSSRH_TOKEN_PASSWORD")
+val ossrhUsername = (findProperty("ossrhUsername") as String?) ?: System.getenv("OSSRH_USERNAME")
+val ossrhPassword = (findProperty("ossrhPassword") as String?) ?: System.getenv("OSSRH_PASSWORD")
+
+val resolvedOssrhUsername = ossrhTokenUsername ?: ossrhUsername
+val resolvedOssrhPassword = ossrhTokenPassword ?: ossrhPassword
+val hasOssrhCredentials =
+    !resolvedOssrhUsername.isNullOrBlank() && !resolvedOssrhPassword.isNullOrBlank()
+
 publishing {
     publications {
         create<MavenPublication>("mavenJava") {
@@ -80,31 +92,26 @@ publishing {
     }
 
     repositories {
-        maven {
-            name = "Sonatype"
-            val isSnapshot = version.toString().endsWith("SNAPSHOT")
-            val releasesRepositoryUrl =
-                (findProperty("ossrhReleasesUrl") as String?)
-                    ?: "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-            val snapshotsRepositoryUrl =
-                (findProperty("ossrhSnapshotsUrl") as String?)
-                    ?: "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+        if (hasOssrhCredentials) {
+            maven {
+                name = "Sonatype"
+                val isSnapshot = version.toString().endsWith("SNAPSHOT")
+                val releasesRepositoryUrl =
+                    (findProperty("ossrhReleasesUrl") as String?)
+                        ?: "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+                val snapshotsRepositoryUrl =
+                    (findProperty("ossrhSnapshotsUrl") as String?)
+                        ?: "https://s01.oss.sonatype.org/content/repositories/snapshots/"
 
-            url = uri(if (isSnapshot) snapshotsRepositoryUrl else releasesRepositoryUrl)
+                url = uri(if (isSnapshot) snapshotsRepositoryUrl else releasesRepositoryUrl)
 
-            credentials {
-                val ossrhTokenUsername = (findProperty("ossrhTokenUsername") as String?)
-                    ?: System.getenv("OSSRH_TOKEN_USERNAME")
-                val ossrhTokenPassword = (findProperty("ossrhTokenPassword") as String?)
-                    ?: System.getenv("OSSRH_TOKEN_PASSWORD")
-
-                username = ossrhTokenUsername
-                    ?: (findProperty("ossrhUsername") as String?)
-                    ?: System.getenv("OSSRH_USERNAME")
-                password = ossrhTokenPassword
-                    ?: (findProperty("ossrhPassword") as String?)
-                    ?: System.getenv("OSSRH_PASSWORD")
+                credentials {
+                    username = resolvedOssrhUsername
+                    password = resolvedOssrhPassword
+                }
             }
+        } else {
+            logger.warn("Skipping Sonatype repository configuration because no OSSRH credentials were found.")
         }
     }
 }
@@ -113,18 +120,35 @@ signing {
     val signingKeyId = findProperty("signingKeyId") as String? ?: System.getenv("SIGNING_KEY_ID")
     val signingKey = findProperty("signingKey") as String? ?: System.getenv("SIGNING_KEY")
     val signingPassword = findProperty("signingPassword") as String? ?: System.getenv("SIGNING_PASSWORD")
+    val gpgKeyName =
+        (findProperty("signing.gnupg.keyName") as String?) ?: System.getenv("SIGNING_GNUPG_KEY_NAME")
+    val hasInMemoryKeys = !signingKey.isNullOrBlank() && !signingPassword.isNullOrBlank()
+    val hasGpgConfiguration =
+        !gpgKeyName.isNullOrBlank() || project.hasProperty("signing.gnupg.keyName") ||
+            project.hasProperty("signing.gnupg.executable") ||
+            project.hasProperty("signing.gnupg.homeDir") ||
+            System.getenv("SIGNING_GNUPG_EXECUTABLE") != null ||
+            System.getenv("SIGNING_GNUPG_HOME_DIR") != null
 
-    if (!signingKey.isNullOrBlank() && !signingPassword.isNullOrBlank()) {
-        if (signingKeyId.isNullOrBlank()) {
-            useInMemoryPgpKeys(signingKey, signingPassword)
-        } else {
-            useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+    when {
+        hasInMemoryKeys -> {
+            if (signingKeyId.isNullOrBlank()) {
+                useInMemoryPgpKeys(signingKey, signingPassword)
+            } else {
+                useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+            }
         }
-    } else if (project.hasProperty("signing.gnupg.keyName") || System.getenv("SIGNING_GNUPG_KEY_NAME") != null) {
-        useGpgCmd()
+        hasGpgConfiguration -> {
+            useGpgCmd()
+        }
+        else -> {
+            logger.warn("Skipping artifact signing because no signing credentials were provided.")
+        }
     }
 
-    sign(publishing.publications["mavenJava"])
+    if (hasInMemoryKeys || hasGpgConfiguration) {
+        sign(publishing.publications["mavenJava"])
+    }
 }
 
 
