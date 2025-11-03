@@ -6,6 +6,7 @@ plugins {
 
 import java.util.Base64
 import org.gradle.plugins.signing.Sign
+import org.gradle.plugins.signing.SigningExtension
 
 group = "io.github.eurofunk"
 version = "0.0.1"
@@ -190,8 +191,10 @@ signing {
     }
 }
 
+val signingExtension = extensions.getByType<SigningExtension>()
+
 tasks.withType<Sign>().configureEach {
-    onlyIf { signing.required.getOrElse(false) }
+    onlyIf { signingExtension.isRequired }
 }
 
 
