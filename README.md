@@ -158,3 +158,53 @@ tasks.checkLicenses {
     policiesFile = file("path/to/your/policies.json")
 }
 ```
+
+## Publishing setup TODO (Sonatype OSSRH)
+
+Store secrets in `~/.gradle/gradle.properties`, your CI secret store, or environment
+variables as noted below. The checklist assumes that the project is published through
+the Sonatype OSSRH infrastructure with token-based authentication (preferred) and
+falls back to legacy username/password credentials if necessary.
+
+- [ ] Confirm OSSRH project access
+  - Sign in at <https://s01.oss.sonatype.org/> with the Sonatype account that owns the
+    `io.github.eurofunk` groupId. If the namespace has not yet been approved, follow
+    the steps in the [OSSRH guide](https://central.sonatype.org/publish/publish-guide/)
+    to request access.
+  - Ensure you can see the `Staging Repositories` menu entry before attempting to publish.
+
+- [ ] `ossrhTokenUsername` / `OSSRH_TOKEN_USERNAME`
+  - From the OSSRH web UI, open **Profile → User Token** and click **Access User Token**.
+    Copy the generated **Token Username** and store it as the Gradle property
+    `ossrhTokenUsername` or environment variable `OSSRH_TOKEN_USERNAME`.
+  - Legacy fallback: the build still honors `ossrhUsername` / `OSSRH_USERNAME` if tokens are
+    not available.
+
+- [ ] `ossrhTokenPassword` / `OSSRH_TOKEN_PASSWORD`
+  - In the same dialog, copy the **Token Password** and store it as the Gradle property
+    `ossrhTokenPassword` or environment variable `OSSRH_TOKEN_PASSWORD`.
+  - Legacy fallback: provide `ossrhPassword` / `OSSRH_PASSWORD` if you must use the classic
+    credentials.
+
+- [ ] (optional) Override publishing endpoints
+  - Releases deploy to `https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/` by default.
+    Override with the Gradle property `ossrhReleasesUrl` only if Sonatype assigns a different
+    host for your project.
+  - Snapshot artifacts deploy to `https://s01.oss.sonatype.org/content/repositories/snapshots/`.
+    Override with `ossrhSnapshotsUrl` if required.
+
+- [ ] `signingKeyId` / `SIGNING_KEY_ID` *(optional when using in-memory keys)*
+  - Run `gpg --list-secret-keys --keyid-format=long` and copy the key ID for your publishing key (for example `ABCDEF1234567890`).
+  - Provide the key ID via the Gradle property `signingKeyId` or environment variable `SIGNING_KEY_ID`. When omitted, the build signs with the default key material.
+
+- [ ] `signingKey` / `SIGNING_KEY`
+  - Export the ASCII-armored private key with `gpg --armor --export-secret-keys <KEY_ID>` (replace `<KEY_ID>` with the value above).
+  - Paste the full output—including the `BEGIN/END PGP PRIVATE KEY BLOCK` markers—into the Gradle property `signingKey` or environment variable `SIGNING_KEY`.
+
+- [ ] `signingPassword` / `SIGNING_PASSWORD`
+  - Use the passphrase chosen when creating the GPG key (from `gpg --full-generate-key`).
+  - Store it as the Gradle property `signingPassword` or environment variable `SIGNING_PASSWORD`.
+
+- [ ] `signing.gnupg.keyName` / `SIGNING_GNUPG_KEY_NAME` *(only if using the local GPG executable)*
+  - If you prefer Gradle to call the local `gpg` binary, set this to the key name returned by `gpg --list-secret-keys` (for example `User Name <user@example.com>`).
+  - Ensure `signing.gnupg.executable` points to the desired GPG binary and that the key is available in the local keyring or CI agent.
