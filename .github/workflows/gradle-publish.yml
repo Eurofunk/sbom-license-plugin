@@ -46,13 +46,20 @@ jobs:
             [[ "$1" =~ ^(0[xX])?[0-9A-Fa-f]{8,40}$ ]]
           }
 
+          should_write_key_id=false
+          if [[ -n "${SIGNING_KEY_ID}" ]]; then
+            if is_hex_key_id "${SIGNING_KEY_ID}"; then
+              should_write_key_id=true
+            else
+              echo "Skipping signingKeyId because it is not a hexadecimal key identifier." >&2
+            fi
+          fi
+
           {
             echo "ossrhTokenUsername=${OSSRH_TOKEN_USERNAME}"
             echo "ossrhTokenPassword=${OSSRH_TOKEN_PASSWORD}"
-            if [[ -n "${SIGNING_KEY_ID}" && is_hex_key_id "${SIGNING_KEY_ID}" ]]; then
+            if [[ "${should_write_key_id}" == "true" ]]; then
               echo "signingKeyId=${SIGNING_KEY_ID}"
-            else
-              echo "Skipping signingKeyId because it is empty or not a hexadecimal key identifier." >&2
             fi
             echo "signingPassword=${SIGNING_PASSWORD}"
             echo "signingKey=${SIGNING_KEY}"
