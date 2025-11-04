@@ -197,7 +197,7 @@ signing {
             } else {
                 try {
                     useInMemoryPgpKeys(signingKeyId, keyMaterial, password)
-                } catch (ex: IllegalArgumentException) {
+                } catch (ex: Exception) {
                     logger.warn(
                         "Falling back to signing without an explicit key ID because the provided " +
                             "identifier could not be parsed.",
