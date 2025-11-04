@@ -204,20 +204,15 @@ signing {
 
     fun configureInMemoryKeys(signingKeyId: String?, keyMaterial: String, password: String): Boolean {
         return runCatching {
-            if (signingKeyId.isNullOrBlank()) {
-                useInMemoryPgpKeys(keyMaterial, password)
-            } else {
-                try {
-                    useInMemoryPgpKeys(signingKeyId, keyMaterial, password)
-                } catch (ex: Exception) {
-                    logger.warn(
-                        "Falling back to signing without an explicit key ID because the provided " +
-                            "identifier could not be parsed.",
-                        ex
-                    )
-                    useInMemoryPgpKeys(keyMaterial, password)
-                }
+            if (!signingKeyId.isNullOrBlank()) {
+                logger.info(
+                    "Configuring in-memory signing keys using the provided key material; the explicit " +
+                        "signing key ID '$signingKeyId' will be ignored and Gradle will infer the ID from " +
+                        "the key itself."
+                )
             }
+
+            useInMemoryPgpKeys(keyMaterial, password)
         }.onFailure {
             logger.warn(
                 "Failed to configure in-memory signing keys. Artifact signing will be skipped.",

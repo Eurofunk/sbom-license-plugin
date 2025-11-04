@@ -196,9 +196,9 @@ that local verification builds continue to succeed.
   - Snapshot artifacts deploy to `https://s01.oss.sonatype.org/content/repositories/snapshots/`.
     Override with `ossrhSnapshotsUrl` if required.
 
-- [ ] `signingKeyId` / `SIGNING_KEY_ID` *(optional when using in-memory keys)*
-  - Run `gpg --list-secret-keys --keyid-format=long` and copy the key ID for your publishing key (for example `ABCDEF1234567890`). You may also use the full 40-character fingerprint that `gpg` prints.
-  - Provide the key ID via the Gradle property `signingKeyId` or environment variable `SIGNING_KEY_ID`. When omitted—or when the supplied value does not resolve to an 8- or 16-digit hexadecimal key ID—the build signs with the default key material embedded in the private key. 40-character fingerprints are accepted and automatically trimmed to the lower 16 hexadecimal digits. Values that contain non-hexadecimal characters are ignored with a warning. The GitHub Actions workflow mirrors this behavior before writing `signingKeyId` to `gradle.properties`.
+- [ ] `signingKeyId` / `SIGNING_KEY_ID` *(optional; Gradle now infers the ID for in-memory keys)*
+  - Run `gpg --list-secret-keys --keyid-format=long` and copy the key ID for your publishing key (for example `ABCDEF12`).
+  - Provide the key ID only if you rely on the local GnuPG executable or other tooling that requires it. When Gradle loads the ASCII-armored private key directly (`signingKey`/`SIGNING_KEY`), the build ignores the explicit identifier and derives the key ID from the key material instead. Invalid values are skipped with a warning.
 
 - [ ] `signingKey` / `SIGNING_KEY`
   - Export the ASCII-armored private key with `gpg --armor --export-secret-keys <KEY_ID>` (replace `<KEY_ID>` with the value above).
@@ -232,7 +232,7 @@ jobs:
       OSSRH_TOKEN_PASSWORD: ${{ secrets.OSSRH_TOKEN_PASSWORD }}
       SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
       SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
-      SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }} # optional when the key contains its own ID
+      SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }} # optional; only required for gpg-based signing
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -245,48 +245,15 @@ jobs:
         run: |
           mkdir -p "$HOME/.gradle"
 
-          normalize_key_id() {
-            local candidate="$1"
-            candidate="${candidate#${candidate%%[![:space:]]*}}"
-            candidate="${candidate%${candidate##*[![:space:]]}}"
-            if [[ -z "$candidate" ]]; then
-              return 1
-            fi
-
-            if [[ "$candidate" == 0x* || "$candidate" == 0X* ]]; then
-              candidate="${candidate:2}"
-            fi
-
-            if [[ ! "$candidate" =~ ^[0-9A-Fa-f]+$ ]]; then
-              return 1
-            fi
-
-            local length=${#candidate}
-            if [[ "$length" -eq 40 ]]; then
-              candidate="${candidate: -16}"
-            elif [[ "$length" -ne 8 && "$length" -ne 16 ]]; then
-              return 1
-            fi
-
-            echo "${candidate^^}"
-            return 0
-          }
-
-          normalized_key_id=""
-          if [[ -n "${SIGNING_KEY_ID}" ]]; then
-            if normalized_key_id=$(normalize_key_id "${SIGNING_KEY_ID}"); then
-              echo "signingKeyId will use ${normalized_key_id}." >&2
-            fi
-          fi
-
           {
             echo "ossrhTokenUsername=${OSSRH_TOKEN_USERNAME}"
             echo "ossrhTokenPassword=${OSSRH_TOKEN_PASSWORD}"
-            if [[ -n "${normalized_key_id}" ]]; then
-              echo "signingKeyId=${normalized_key_id}"
-            fi
             echo "signingPassword=${SIGNING_PASSWORD}"
             echo "signingKey=${SIGNING_KEY}"
+            # Optionally surface SIGNING_KEY_ID for workflows that delegate signing to gpg.
+            if [[ -n "${SIGNING_KEY_ID}" ]]; then
+              echo "signing.keyId=${SIGNING_KEY_ID}"
+            fi
           } > "$HOME/.gradle/gradle.properties"
 
           chmod 600 "$HOME/.gradle/gradle.properties"

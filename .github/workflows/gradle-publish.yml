@@ -42,53 +42,15 @@ jobs:
         run: |
           mkdir -p "$HOME/.gradle"
 
-          normalize_key_id() {
-            local candidate="$1"
-            # Trim leading/trailing whitespace
-            candidate="${candidate#${candidate%%[![:space:]]*}}"
-            candidate="${candidate%${candidate##*[![:space:]]}}"
-            if [[ -z "$candidate" ]]; then
-              return 1
-            fi
-
-            if [[ "$candidate" == 0x* || "$candidate" == 0X* ]]; then
-              candidate="${candidate:2}"
-            fi
-
-            if [[ ! "$candidate" =~ ^[0-9A-Fa-f]+$ ]]; then
-              return 1
-            fi
-
-            local length=${#candidate}
-            if [[ "$length" -eq 40 ]]; then
-              echo "Received 40-character signing key fingerprint; trimming to the lower 16 digits." >&2
-              candidate="${candidate: -16}"
-            elif [[ "$length" -ne 8 && "$length" -ne 16 ]]; then
-              return 1
-            fi
-
-            echo "${candidate^^}"
-            return 0
-          }
-
-          normalized_key_id=""
-          if [[ -n "${SIGNING_KEY_ID}" ]]; then
-            if normalized_key_id=$(normalize_key_id "${SIGNING_KEY_ID}"); then
-              echo "Using signing key ID ${normalized_key_id}." >&2
-            else
-              echo "Skipping signingKeyId because it is not a valid 8 or 16 digit hexadecimal identifier." >&2
-              normalized_key_id=""
-            fi
-          fi
-
           {
             echo "ossrhTokenUsername=${OSSRH_TOKEN_USERNAME}"
             echo "ossrhTokenPassword=${OSSRH_TOKEN_PASSWORD}"
-            if [[ -n "${normalized_key_id}" ]]; then
-              echo "signingKeyId=${normalized_key_id}"
-            fi
             echo "signingPassword=${SIGNING_PASSWORD}"
             echo "signingKey=${SIGNING_KEY}"
+            # Optionally expose SIGNING_KEY_ID for workflows that delegate signing to gpg.
+            if [[ -n "${SIGNING_KEY_ID}" ]]; then
+              echo "signing.keyId=${SIGNING_KEY_ID}"
+            fi
           } > "$HOME/.gradle/gradle.properties"
 
           chmod 600 "$HOME/.gradle/gradle.properties"
