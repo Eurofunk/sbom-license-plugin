@@ -203,7 +203,7 @@ that local verification builds continue to succeed.
 - [ ] `signingKey` / `SIGNING_KEY`
   - Export the ASCII-armored private key with `gpg --armor --export-secret-keys <KEY_ID>` (replace `<KEY_ID>` with the value above).
   - Paste the full output—including the `BEGIN/END PGP PRIVATE KEY BLOCK` markers—into the Gradle property `signingKey` or environment variable `SIGNING_KEY`.
-  - The build accepts either the raw ASCII-armored export or a base64-encoded copy of that same text. Binary (non-armored) keys are ignored and signing will be skipped with a warning.
+  - The build accepts either the raw ASCII-armored export or a base64-encoded copy of that same text. Gradle now validates that the material can be parsed as a PGP secret key; binary exports or truncated blocks are ignored and signing will be skipped with a warning.
 
 - [ ] `signingPassword` / `SIGNING_PASSWORD`
   - Use the passphrase chosen when creating the GPG key (from `gpg --full-generate-key`).
@@ -222,8 +222,9 @@ scope them to the publish job only. Because the signing key is multi-line, the
 workflow writes the values to `~/.gradle/gradle.properties` before invoking Gradle,
 which ensures the full key material (including embedded newlines or `\n` escape
 sequences) is preserved. Provide the ASCII-armored key directly or a base64-encoded
-copy of that text export; binary private keys are rejected to keep Gradle from
-failing during signing.
+copy of that text export; the workflow feeds it to Gradle exactly as provided, and
+the build verifies it can be parsed as a secret key before enabling signing. Invalid
+or binary private keys are ignored so the publish run continues without signing.
 
 ```yaml
 jobs:

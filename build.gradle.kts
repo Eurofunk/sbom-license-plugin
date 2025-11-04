@@ -4,10 +4,14 @@ plugins {
     signing
 }
 
+import java.io.ByteArrayInputStream
 import java.util.Base64
 import kotlin.text.Charsets
 import org.gradle.plugins.signing.Sign
 import org.gradle.plugins.signing.SigningExtension
+import org.bouncycastle.openpgp.PGPSecretKeyRingCollection
+import org.bouncycastle.openpgp.PGPUtil
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator
 
 group = "io.github.eurofunk"
 version = "0.0.1"
@@ -133,9 +137,28 @@ signing {
             return value.contains("BEGIN PGP") && value.contains("PRIVATE KEY")
         }
 
+        fun validateArmoredKey(candidate: String): String? {
+            val parsed = runCatching {
+                ByteArrayInputStream(candidate.toByteArray(Charsets.UTF_8)).use { input ->
+                    PGPSecretKeyRingCollection(PGPUtil.getDecoderStream(input), BcKeyFingerprintCalculator())
+                }
+            }
+
+            return if (parsed.isSuccess) {
+                candidate
+            } else {
+                logger.warn(
+                    "Ignoring signing key because it cannot be parsed as a PGP private key. " +
+                        "Ensure you export the secret key using 'gpg --armor --export-secret-keys'.",
+                    parsed.exceptionOrNull()
+                )
+                null
+            }
+        }
+
         val normalized = rawKey.replace("\\n", "\n").trim()
         if (containsArmor(normalized)) {
-            return normalized
+            return validateArmoredKey(normalized)
         }
 
         val decodedArmor = runCatching {
@@ -144,7 +167,7 @@ signing {
         }.getOrNull()
 
         if (decodedArmor != null && containsArmor(decodedArmor)) {
-            return decodedArmor
+            return validateArmoredKey(decodedArmor)
         }
 
         logger.warn(
