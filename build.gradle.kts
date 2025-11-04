@@ -201,14 +201,9 @@ signing {
             project.hasProperty("signing.gnupg.homeDir") ||
             System.getenv("SIGNING_GNUPG_EXECUTABLE") != null ||
             System.getenv("SIGNING_GNUPG_HOME_DIR") != null
-    val hasSigningCredentials = hasInMemoryKeys || hasGpgConfiguration
 
-    isRequired = hasSigningCredentials
-
-    when {
-        hasInMemoryKeys -> {
-            val keyMaterial = signingKey!!
-            val password = signingPassword!!
+    fun configureInMemoryKeys(signingKeyId: String?, keyMaterial: String, password: String): Boolean {
+        return runCatching {
             if (signingKeyId.isNullOrBlank()) {
                 useInMemoryPgpKeys(keyMaterial, password)
             } else {
@@ -223,17 +218,34 @@ signing {
                     useInMemoryPgpKeys(keyMaterial, password)
                 }
             }
-        }
-        hasGpgConfiguration -> {
-            useGpgCmd()
-        }
-        else -> {
-            logger.warn("Skipping artifact signing because no signing credentials were provided.")
-        }
+        }.onFailure {
+            logger.warn(
+                "Failed to configure in-memory signing keys. Artifact signing will be skipped.",
+                it
+            )
+        }.isSuccess
     }
 
-    if (hasSigningCredentials) {
+    val signatoryConfigured = when {
+        hasInMemoryKeys -> configureInMemoryKeys(signingKeyId, signingKey!!, signingPassword!!)
+        hasGpgConfiguration -> {
+            useGpgCmd()
+            true
+        }
+        else -> false
+    }
+
+    isRequired = signatoryConfigured
+
+    if (signatoryConfigured) {
         sign(publishing.publications["mavenJava"])
+    } else {
+        val reason = if (hasInMemoryKeys || hasGpgConfiguration) {
+            "the provided signing configuration could not be applied"
+        } else {
+            "no signing credentials were provided"
+        }
+        logger.warn("Skipping artifact signing because $reason.")
     }
 }
 
