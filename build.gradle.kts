@@ -29,6 +29,7 @@ dependencies {
     implementation(libs.bundles.jackson)
     implementation(libs.cyclonedx.java)
     implementation(libs.spdx.utils)
+    implementation("org.bouncycastle:bcpg-jdk18on:1.78.1")
 
     testImplementation(libs.classgraph)
     testImplementation(libs.equalsverifier)
