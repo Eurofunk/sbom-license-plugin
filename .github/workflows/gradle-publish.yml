@@ -10,6 +10,18 @@ name: Gradle Package
 on:
   release:
     types: [ created ]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref (branch or tag) to build'
+        required: false
+        default: ''
+        type: string
+      publish_to_remote:
+        description: 'Publish artifacts to Sonatype OSSRH and the Gradle Plugin Portal'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build:
@@ -24,9 +36,12 @@ jobs:
       SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
       SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
       SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
+      PUBLISH_TO_REMOTE: ${{ github.event_name == 'release' || inputs.publish_to_remote == true }}
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -43,10 +58,18 @@ jobs:
           mkdir -p "$HOME/.gradle"
 
           {
-            echo "ossrhTokenUsername=${OSSRH_TOKEN_USERNAME}"
-            echo "ossrhTokenPassword=${OSSRH_TOKEN_PASSWORD}"
-            echo "signingPassword=${SIGNING_PASSWORD}"
-            echo "signingKey=${SIGNING_KEY}"
+            if [[ -n "${OSSRH_TOKEN_USERNAME}" ]]; then
+              echo "ossrhTokenUsername=${OSSRH_TOKEN_USERNAME}"
+            fi
+            if [[ -n "${OSSRH_TOKEN_PASSWORD}" ]]; then
+              echo "ossrhTokenPassword=${OSSRH_TOKEN_PASSWORD}"
+            fi
+            if [[ -n "${SIGNING_PASSWORD}" ]]; then
+              echo "signingPassword=${SIGNING_PASSWORD}"
+            fi
+            if [[ -n "${SIGNING_KEY}" ]]; then
+              echo "signingKey=${SIGNING_KEY}"
+            fi
             # Optionally expose SIGNING_KEY_ID for workflows that delegate signing to gpg.
             if [[ -n "${SIGNING_KEY_ID}" ]]; then
               echo "signing.keyId=${SIGNING_KEY_ID}"
@@ -59,9 +82,11 @@ jobs:
         run: ./gradlew build
 
       - name: Publish to Sonatype OSSRH
+        if: env.PUBLISH_TO_REMOTE == 'true'
         run: ./gradlew publish
 
       - name: Publish to Gradle Plugin Portal
+        if: env.PUBLISH_TO_REMOTE == 'true'
         run: ./gradlew publishPlugins
         env:
           GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY }}

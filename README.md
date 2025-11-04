@@ -250,10 +250,18 @@ jobs:
           mkdir -p "$HOME/.gradle"
 
           {
-            echo "ossrhTokenUsername=${OSSRH_TOKEN_USERNAME}"
-            echo "ossrhTokenPassword=${OSSRH_TOKEN_PASSWORD}"
-            echo "signingPassword=${SIGNING_PASSWORD}"
-            echo "signingKey=${SIGNING_KEY}"
+            if [[ -n "${OSSRH_TOKEN_USERNAME}" ]]; then
+              echo "ossrhTokenUsername=${OSSRH_TOKEN_USERNAME}"
+            fi
+            if [[ -n "${OSSRH_TOKEN_PASSWORD}" ]]; then
+              echo "ossrhTokenPassword=${OSSRH_TOKEN_PASSWORD}"
+            fi
+            if [[ -n "${SIGNING_PASSWORD}" ]]; then
+              echo "signingPassword=${SIGNING_PASSWORD}"
+            fi
+            if [[ -n "${SIGNING_KEY}" ]]; then
+              echo "signingKey=${SIGNING_KEY}"
+            fi
             # Optionally surface SIGNING_KEY_ID for workflows that delegate signing to gpg.
             if [[ -n "${SIGNING_KEY_ID}" ]]; then
               echo "signing.keyId=${SIGNING_KEY_ID}"
@@ -273,3 +281,24 @@ environment, so no extra configuration is required. If you prefer Gradle propert
 instead, write the secrets to `~/.gradle/gradle.properties` in a preceding workflow
 step and delete the file afterwards to avoid leaking credentials in later jobs. The
 example above performs these steps automatically.
+
+### Running a release test
+
+Use the **Gradle Package** workflow to perform a dry-run of the release
+pipeline before cutting an actual GitHub release:
+
+1. Open **Actions → Gradle Package** in the repository UI and click
+   **Run workflow**.
+2. Pick the branch or tag that should be exercised from the **Branch**
+   drop-down. GitHub lists every pushed branch—such as `main`,
+   `codex/configure-maven-publishing-in-build.gradle.kts`, or any feature
+   branch you pushed—so you can target the exact commit you want to test.
+3. Leave **Publish artifacts to Sonatype OSSRH and the Gradle Plugin Portal**
+   disabled to run a local verification. The workflow will build the
+   project, resolve signing, and skip the remote publish steps.
+4. When you are satisfied with the dry-run, create a GitHub release from the
+   branch that should ship (typically `main`) and the workflow will execute
+   again with publishing enabled.
+
+This mirrors the branch picker shown in the GitHub release dialog and makes it
+easy to verify release changes from any branch before publishing.
