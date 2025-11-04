@@ -196,14 +196,14 @@ that local verification builds continue to succeed.
   - Snapshot artifacts deploy to `https://s01.oss.sonatype.org/content/repositories/snapshots/`.
     Override with `ossrhSnapshotsUrl` if required.
 
-- [ ] `signingKeyId` / `SIGNING_KEY_ID` *(optional; Gradle now infers the ID for in-memory keys)*
+- [ ] `signingKeyId` / `SIGNING_KEY_ID` *(optional)*
   - Run `gpg --list-secret-keys --keyid-format=long` and copy the key ID for your publishing key (for example `ABCDEF12`).
-  - Provide the key ID only if you rely on the local GnuPG executable or other tooling that requires it. When Gradle loads the ASCII-armored private key directly (`signingKey`/`SIGNING_KEY`), the build ignores the explicit identifier and derives the key ID from the key material instead. Invalid values are skipped with a warning.
+  - Provide the key ID only if you rely on the local GnuPG executable or need a stable identifier in signing reports. When Gradle loads the ASCII-armored private key directly (`signingKey`/`SIGNING_KEY`), the identifier can be omitted and Gradle derives it from the key material automatically.
 
 - [ ] `signingKey` / `SIGNING_KEY`
   - Export the ASCII-armored private key with `gpg --armor --export-secret-keys <KEY_ID>` (replace `<KEY_ID>` with the value above).
-  - Paste the full output—including the `BEGIN/END PGP PRIVATE KEY BLOCK` markers—into the Gradle property `signingKey` or environment variable `SIGNING_KEY`.
-  - The build accepts either the raw ASCII-armored export or a base64-encoded copy of that same text. Gradle now checks that the payload contains a complete PGP secret key block; binary exports or obviously truncated blocks are ignored and signing will be skipped with a warning.
+  - Paste the full output—including the `BEGIN/END PGP PRIVATE KEY BLOCK` markers—into the Gradle property `signingKey` or environment variable `SIGNING_KEY`. A fingerprint alone is not sufficient; the entire private key block must be provided.
+  - The build accepts either the raw ASCII-armored export or a base64-encoded copy of that same text. Gradle checks that the payload contains a complete PGP secret key block; binary exports or truncated blocks are ignored and signing will be skipped with a warning.
 
 - [ ] `signingPassword` / `SIGNING_PASSWORD`
   - Use the passphrase chosen when creating the GPG key (from `gpg --full-generate-key`).
@@ -223,7 +223,7 @@ workflow writes the values to `~/.gradle/gradle.properties` before invoking Grad
 which ensures the full key material (including embedded newlines or `\n` escape
 sequences) is preserved. Provide the ASCII-armored key directly or a base64-encoded
 copy of that text export; the workflow feeds it to Gradle exactly as provided, and
-the build validates that the payload resembles a complete secret key before enabling
+the build validates that the payload contains the full private key before enabling
 signing. Invalid or binary private keys are ignored so the publish run continues
 without signing.
 
