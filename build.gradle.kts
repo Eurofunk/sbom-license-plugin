@@ -5,6 +5,7 @@ plugins {
 }
 
 import java.util.Base64
+import kotlin.text.Charsets
 import org.gradle.plugins.signing.Sign
 import org.gradle.plugins.signing.SigningExtension
 
@@ -125,19 +126,34 @@ publishing {
 signing {
     fun decodeSigningKey(rawKey: String?): String? {
         if (rawKey.isNullOrBlank()) {
-            return rawKey
+            return null
+        }
+
+        fun containsArmor(value: String): Boolean {
+            return value.contains("BEGIN PGP") && value.contains("PRIVATE KEY")
         }
 
         val normalized = rawKey.replace("\\n", "\n").trim()
-        if (normalized.contains("BEGIN PGP")) {
+        if (containsArmor(normalized)) {
             return normalized
         }
 
-        return runCatching {
-            val decoded = String(Base64.getDecoder().decode(normalized))
-            val decodedNormalized = decoded.replace("\\n", "\n").trim()
-            decodedNormalized.takeIf { it.contains("BEGIN PGP") }
-        }.getOrNull() ?: normalized
+        val decodedArmor = runCatching {
+            val decoded = Base64.getDecoder().decode(normalized)
+            String(decoded, Charsets.UTF_8).replace("\\n", "\n").trim()
+        }.getOrNull()
+
+        if (decodedArmor != null && containsArmor(decodedArmor)) {
+            return decodedArmor
+        }
+
+        logger.warn(
+            "Ignoring signing key because it does not contain an ASCII-armored PGP PRIVATE KEY " +
+                "block. Provide the direct output of 'gpg --armor --export-secret-keys' or a " +
+                "base64-encoded version of that export."
+        )
+
+        return null
     }
 
     fun normalizeSigningKeyId(candidate: String?): String? {
@@ -187,14 +203,14 @@ signing {
         ?: (findProperty("signing.keyBase64") as String?)
         ?: System.getenv("SIGNING_KEY")
         ?: System.getenv("SIGNING_KEY_BASE64")
-    val signingKey = decodeSigningKey(rawSigningKey)?.takeIf { it.isNotBlank() }
+    val signingKey = decodeSigningKey(rawSigningKey)
     val signingPassword = (findProperty("signingPassword") as String?)
         ?: (findProperty("signing.password") as String?)
         ?: System.getenv("SIGNING_PASSWORD")
         ?: System.getenv("SIGNING_PASSPHRASE")
     val gpgKeyName =
         (findProperty("signing.gnupg.keyName") as String?) ?: System.getenv("SIGNING_GNUPG_KEY_NAME")
-    val hasInMemoryKeys = signingKey != null && signingPassword != null
+    val hasInMemoryKeys = !signingKey.isNullOrBlank() && !signingPassword.isNullOrBlank()
     val hasGpgConfiguration =
         !gpgKeyName.isNullOrBlank() || project.hasProperty("signing.gnupg.keyName") ||
             project.hasProperty("signing.gnupg.executable") ||
