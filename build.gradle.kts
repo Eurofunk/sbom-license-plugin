@@ -238,7 +238,7 @@ signing {
             return validateArmoredKey(normalized)
         }
 
-        val base64Sanitized = normalized.replace("\s+".toRegex(), "")
+        val base64Sanitized = normalized.filterNot { it.isWhitespace() }
         val decodedArmor = runCatching {
             val decoded = Base64.getDecoder().decode(base64Sanitized)
             String(decoded, StandardCharsets.UTF_8).replace("\\n", "\n").trim()
