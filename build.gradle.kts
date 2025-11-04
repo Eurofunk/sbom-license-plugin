@@ -195,7 +195,16 @@ signing {
             if (signingKeyId.isNullOrBlank()) {
                 useInMemoryPgpKeys(keyMaterial, password)
             } else {
-                useInMemoryPgpKeys(signingKeyId, keyMaterial, password)
+                try {
+                    useInMemoryPgpKeys(signingKeyId, keyMaterial, password)
+                } catch (ex: IllegalArgumentException) {
+                    logger.warn(
+                        "Falling back to signing without an explicit key ID because the provided " +
+                            "identifier could not be parsed.",
+                        ex
+                    )
+                    useInMemoryPgpKeys(keyMaterial, password)
+                }
             }
         }
         hasGpgConfiguration -> {
