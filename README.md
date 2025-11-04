@@ -158,3 +158,118 @@ tasks.checkLicenses {
     policiesFile = file("path/to/your/policies.json")
 }
 ```
+
+## Publishing setup TODO (Sonatype OSSRH)
+
+Store secrets in `~/.gradle/gradle.properties`, your CI secret store, or environment
+variables as noted below. The checklist assumes that the project is published through
+the Sonatype OSSRH infrastructure with token-based authentication (preferred) and
+falls back to legacy username/password credentials if necessary. When these
+credentials (and the signing keys described below) are absent, running
+`./gradlew publish` will skip the remote Sonatype repository and signing tasks so
+that local verification builds continue to succeed.
+
+- [ ] Confirm OSSRH project access
+  - Sign in at <https://s01.oss.sonatype.org/> with the Sonatype account that owns the
+    `io.github.eurofunk` groupId. If the namespace has not yet been approved, follow
+    the steps in the [OSSRH guide](https://central.sonatype.org/publish/publish-guide/)
+    to request access.
+  - Ensure you can see the `Staging Repositories` menu entry before attempting to publish.
+
+- [ ] `ossrhTokenUsername` / `OSSRH_TOKEN_USERNAME`
+  - From the OSSRH web UI, open **Profile → User Token** and click **Access User Token**.
+    Copy the generated **Token Username** and store it as the Gradle property
+    `ossrhTokenUsername` or environment variable `OSSRH_TOKEN_USERNAME`.
+  - Legacy fallback: the build still honors `ossrhUsername` / `OSSRH_USERNAME` if tokens are
+    not available.
+
+- [ ] `ossrhTokenPassword` / `OSSRH_TOKEN_PASSWORD`
+  - In the same dialog, copy the **Token Password** and store it as the Gradle property
+    `ossrhTokenPassword` or environment variable `OSSRH_TOKEN_PASSWORD`.
+  - Legacy fallback: provide `ossrhPassword` / `OSSRH_PASSWORD` if you must use the classic
+    credentials.
+
+- [ ] (optional) Override publishing endpoints
+  - Releases deploy to `https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/` by default.
+    Override with the Gradle property `ossrhReleasesUrl` only if Sonatype assigns a different
+    host for your project.
+  - Snapshot artifacts deploy to `https://s01.oss.sonatype.org/content/repositories/snapshots/`.
+    Override with `ossrhSnapshotsUrl` if required.
+
+- [ ] `signingKeyId` / `SIGNING_KEY_ID` *(optional; Gradle now infers the ID for in-memory keys)*
+  - Run `gpg --list-secret-keys --keyid-format=long` and copy the key ID for your publishing key (for example `ABCDEF12`).
+  - Provide the key ID only if you rely on the local GnuPG executable or other tooling that requires it. When Gradle loads the ASCII-armored private key directly (`signingKey`/`SIGNING_KEY`), the build ignores the explicit identifier and derives the key ID from the key material instead. Invalid values are skipped with a warning.
+
+- [ ] `signingKey` / `SIGNING_KEY`
+  - Export the ASCII-armored private key with `gpg --armor --export-secret-keys <KEY_ID>` (replace `<KEY_ID>` with the value above).
+  - Paste the full output—including the `BEGIN/END PGP PRIVATE KEY BLOCK` markers—into the Gradle property `signingKey` or environment variable `SIGNING_KEY`.
+  - The build accepts either the raw ASCII-armored export or a base64-encoded copy of that same text. Gradle now checks that the payload contains a complete PGP secret key block; binary exports or obviously truncated blocks are ignored and signing will be skipped with a warning.
+
+- [ ] `signingPassword` / `SIGNING_PASSWORD`
+  - Use the passphrase chosen when creating the GPG key (from `gpg --full-generate-key`).
+  - Store it as the Gradle property `signingPassword` or environment variable `SIGNING_PASSWORD`.
+
+- [ ] `signing.gnupg.keyName` / `SIGNING_GNUPG_KEY_NAME` *(only if using the local GPG executable)*
+  - If you prefer Gradle to call the local `gpg` binary, set this to the key name returned by `gpg --list-secret-keys` (for example `User Name <user@example.com>`).
+  - Ensure `signing.gnupg.executable` points to the desired GPG binary and that the key is available in the local keyring or CI agent.
+
+### Using GitHub Actions secrets
+
+When the project builds in GitHub Actions, reference the organization or repository
+secrets as environment variables so Gradle can pick them up automatically. Secrets
+exposed via the workflow `env` section are available to every step; you can also
+scope them to the publish job only. Because the signing key is multi-line, the
+workflow writes the values to `~/.gradle/gradle.properties` before invoking Gradle,
+which ensures the full key material (including embedded newlines or `\n` escape
+sequences) is preserved. Provide the ASCII-armored key directly or a base64-encoded
+copy of that text export; the workflow feeds it to Gradle exactly as provided, and
+the build validates that the payload resembles a complete secret key before enabling
+signing. Invalid or binary private keys are ignored so the publish run continues
+without signing.
+
+```yaml
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      OSSRH_TOKEN_USERNAME: ${{ secrets.OSSRH_TOKEN_USERNAME }}
+      OSSRH_TOKEN_PASSWORD: ${{ secrets.OSSRH_TOKEN_PASSWORD }}
+      SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+      SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+      SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }} # optional; only required for gpg-based signing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Configure Gradle publishing credentials
+        run: |
+          mkdir -p "$HOME/.gradle"
+
+          {
+            echo "ossrhTokenUsername=${OSSRH_TOKEN_USERNAME}"
+            echo "ossrhTokenPassword=${OSSRH_TOKEN_PASSWORD}"
+            echo "signingPassword=${SIGNING_PASSWORD}"
+            echo "signingKey=${SIGNING_KEY}"
+            # Optionally surface SIGNING_KEY_ID for workflows that delegate signing to gpg.
+            if [[ -n "${SIGNING_KEY_ID}" ]]; then
+              echo "signing.keyId=${SIGNING_KEY_ID}"
+            fi
+          } > "$HOME/.gradle/gradle.properties"
+
+          chmod 600 "$HOME/.gradle/gradle.properties"
+      - name: Publish artifacts
+        run: ./gradlew publish
+      - name: Clean up Gradle credentials
+        if: always()
+        run: rm -f "$HOME/.gradle/gradle.properties"
+```
+
+Gradle reads the variables listed above (and their legacy fallbacks) directly from the
+environment, so no extra configuration is required. If you prefer Gradle properties
+instead, write the secrets to `~/.gradle/gradle.properties` in a preceding workflow
+step and delete the file afterwards to avoid leaking credentials in later jobs. The
+example above performs these steps automatically.
