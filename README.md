@@ -290,9 +290,10 @@ pipeline before cutting an actual GitHub release:
 1. Open **Actions → Gradle Package** in the repository UI and click
    **Run workflow**.
 2. Pick the branch or tag that should be exercised from the **Branch**
-   drop-down. GitHub lists every pushed branch—such as `main`,
-   `codex/configure-maven-publishing-in-build.gradle.kts`, or any feature
-   branch you pushed—so you can target the exact commit you want to test.
+   drop-down. The release pipeline promotes builds from the `main`
+   branch, which is selected by default for manual runs. Choose a
+   different branch only if you need to validate work-in-progress
+   changes before merging them into `main`.
 3. Leave **Publish artifacts to Sonatype OSSRH and the Gradle Plugin Portal**
    disabled to run a local verification. The workflow will build the
    project, resolve signing, and skip the remote publish steps.

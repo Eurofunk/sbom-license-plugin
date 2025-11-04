@@ -15,7 +15,7 @@ on:
       ref:
         description: 'Git ref (branch or tag) to build'
         required: false
-        default: ''
+        default: 'main'
         type: string
       publish_to_remote:
         description: 'Publish artifacts to Sonatype OSSRH and the Gradle Plugin Portal'
