@@ -146,15 +146,32 @@ signing {
             return null
         }
 
-        val keyIdPattern = Regex("^(0[xX])?[0-9A-Fa-f]{8,40}$")
-        return if (keyIdPattern.matches(trimmed)) {
-            trimmed
-        } else {
+        val hexPattern = Regex("^(0[xX])?[0-9A-Fa-f]+$")
+        if (!hexPattern.matches(trimmed)) {
             logger.warn(
                 "Ignoring signing key ID because it is not a valid hexadecimal key identifier. " +
                     "Use values such as 'ABCDEF1234567890' or '0xABCDEF1234567890'."
             )
-            null
+            return null
+        }
+
+        val normalized = trimmed.removePrefix("0x").removePrefix("0X")
+        return when (normalized.length) {
+            8, 16 -> normalized.uppercase()
+            40 -> {
+                logger.warn(
+                    "Received a 40-character GPG fingerprint; using the lower 16 hexadecimal " +
+                        "characters as the signing key ID."
+                )
+                normalized.takeLast(16).uppercase()
+            }
+            else -> {
+                logger.warn(
+                    "Ignoring signing key ID because it must be 8 or 16 hexadecimal characters (" +
+                        "optionally prefixed with 0x)."
+                )
+                null
+            }
         }
     }
 
