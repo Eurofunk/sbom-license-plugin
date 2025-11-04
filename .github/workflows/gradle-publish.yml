@@ -41,13 +41,23 @@ jobs:
       - name: Configure Gradle publishing credentials
         run: |
           mkdir -p "$HOME/.gradle"
-          cat <<EOF > "$HOME/.gradle/gradle.properties"
-          ossrhTokenUsername=${OSSRH_TOKEN_USERNAME}
-          ossrhTokenPassword=${OSSRH_TOKEN_PASSWORD}
-          signingKeyId=${SIGNING_KEY_ID}
-          signingPassword=${SIGNING_PASSWORD}
-          signingKey=${SIGNING_KEY}
-          EOF
+
+          is_hex_key_id() {
+            [[ "$1" =~ ^(0[xX])?[0-9A-Fa-f]{8,40}$ ]]
+          }
+
+          {
+            echo "ossrhTokenUsername=${OSSRH_TOKEN_USERNAME}"
+            echo "ossrhTokenPassword=${OSSRH_TOKEN_PASSWORD}"
+            if [[ -n "${SIGNING_KEY_ID}" && is_hex_key_id "${SIGNING_KEY_ID}" ]]; then
+              echo "signingKeyId=${SIGNING_KEY_ID}"
+            else
+              echo "Skipping signingKeyId because it is empty or not a hexadecimal key identifier." >&2
+            fi
+            echo "signingPassword=${SIGNING_PASSWORD}"
+            echo "signingKey=${SIGNING_KEY}"
+          } > "$HOME/.gradle/gradle.properties"
+
           chmod 600 "$HOME/.gradle/gradle.properties"
 
       - name: Build with Gradle

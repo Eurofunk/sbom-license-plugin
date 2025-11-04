@@ -146,7 +146,7 @@ signing {
             return null
         }
 
-        val keyIdPattern = Regex("^(0x)?[0-9A-Fa-f]{8,40}$")
+        val keyIdPattern = Regex("^(0[xX])?[0-9A-Fa-f]{8,40}$")
         return if (keyIdPattern.matches(trimmed)) {
             trimmed
         } else {

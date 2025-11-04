@@ -198,7 +198,7 @@ that local verification builds continue to succeed.
 
 - [ ] `signingKeyId` / `SIGNING_KEY_ID` *(optional when using in-memory keys)*
   - Run `gpg --list-secret-keys --keyid-format=long` and copy the key ID for your publishing key (for example `ABCDEF1234567890`).
-  - Provide the key ID via the Gradle property `signingKeyId` or environment variable `SIGNING_KEY_ID`. When omitted—or when the supplied value does not look like a hexadecimal key ID such as `0xABCDEF1234567890`—the build signs with the default key material embedded in the private key.
+  - Provide the key ID via the Gradle property `signingKeyId` or environment variable `SIGNING_KEY_ID`. When omitted—or when the supplied value does not look like a hexadecimal key ID such as `0xABCDEF1234567890`—the build signs with the default key material embedded in the private key. The GitHub Actions workflow mirrors this behavior by writing `signingKeyId` to `gradle.properties` only when the supplied value resembles a hexadecimal identifier.
 
 - [ ] `signingKey` / `SIGNING_KEY`
   - Export the ASCII-armored private key with `gpg --armor --export-secret-keys <KEY_ID>` (replace `<KEY_ID>` with the value above).
@@ -244,13 +244,21 @@ jobs:
       - name: Configure Gradle publishing credentials
         run: |
           mkdir -p "$HOME/.gradle"
-          cat <<EOF > "$HOME/.gradle/gradle.properties"
-          ossrhTokenUsername=${OSSRH_TOKEN_USERNAME}
-          ossrhTokenPassword=${OSSRH_TOKEN_PASSWORD}
-          signingKeyId=${SIGNING_KEY_ID}
-          signingPassword=${SIGNING_PASSWORD}
-          signingKey=${SIGNING_KEY}
-          EOF
+
+          is_hex_key_id() {
+            [[ "$1" =~ ^(0[xX])?[0-9A-Fa-f]{8,40}$ ]]
+          }
+
+          {
+            echo "ossrhTokenUsername=${OSSRH_TOKEN_USERNAME}"
+            echo "ossrhTokenPassword=${OSSRH_TOKEN_PASSWORD}"
+            if [[ -n "${SIGNING_KEY_ID}" && is_hex_key_id "${SIGNING_KEY_ID}" ]]; then
+              echo "signingKeyId=${SIGNING_KEY_ID}"
+            fi
+            echo "signingPassword=${SIGNING_PASSWORD}"
+            echo "signingKey=${SIGNING_KEY}"
+          } > "$HOME/.gradle/gradle.properties"
+
           chmod 600 "$HOME/.gradle/gradle.properties"
       - name: Publish artifacts
         run: ./gradlew publish
