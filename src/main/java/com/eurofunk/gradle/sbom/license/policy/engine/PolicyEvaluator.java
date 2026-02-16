@@ -5,6 +5,7 @@ import com.eurofunk.gradle.sbom.license.policy.model.AndCondition;
 import com.eurofunk.gradle.sbom.license.policy.model.CoordinatesCondition;
 import com.eurofunk.gradle.sbom.license.policy.model.DependenciesCheck;
 import com.eurofunk.gradle.sbom.license.policy.model.EvaluationResult;
+import com.eurofunk.gradle.sbom.license.policy.model.LicenseCountCondition;
 import com.eurofunk.gradle.sbom.license.policy.model.LicenseGroupCondition;
 import com.eurofunk.gradle.sbom.license.policy.model.LicenseGroups;
 import com.eurofunk.gradle.sbom.license.policy.model.OrCondition;
@@ -50,6 +51,8 @@ public final class PolicyEvaluator {
                     new CoordinatesConditionEvaluator().evaluate(coordinatesCond, component);
             case final LicenseGroupCondition licenseCond ->
                     new LicenseGroupConditionEvaluator(licenseGroups).evaluate(licenseCond, component);
+            case final LicenseCountCondition licenseCountCond ->
+                    new LicenseCountConditionEvaluator().evaluate(licenseCountCond, component);
             case null, default ->
                     EvaluationResult.failure(new Violation(condition, component, "Unknown condition type"));
         };

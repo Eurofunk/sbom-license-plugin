@@ -130,7 +130,7 @@ public class LicenseGroupConditionEvaluator implements PolicyConditionEvaluator<
     }
 
     private boolean isValidLicenseExpression(final SpdxExpression expression) {
-        return expression.isValid(SpdxExpression.Strictness.ALLOW_LICENSEREF_EXCEPTIONS);
+        return expression.isValid(SpdxExpression.Strictness.ALLOW_DEPRECATED);
     }
 
     private EvaluationResult validateCompoundExpression(

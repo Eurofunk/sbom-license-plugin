@@ -22,8 +22,10 @@ repositories {
 }
 
 dependencies {
+    api(libs.cyclonedx.java)
+
+
     implementation(libs.bundles.jackson)
-    implementation(libs.cyclonedx.java)
     implementation(libs.spdx.utils)
 
     testImplementation(libs.classgraph)

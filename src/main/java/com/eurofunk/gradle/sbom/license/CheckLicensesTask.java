@@ -321,7 +321,8 @@ public class CheckLicensesTask extends DefaultTask {
                     getLogger().error("Policy [{}] has violations: [{}]", policy.name(),
                             objectMapper.writeValueAsString(result.getViolations()));
                 } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
+                    getLogger().error("Policy [{}] has violations: [{}]", policy.name(),
+                            result.getViolations().toString());
                 }
             }
         });
