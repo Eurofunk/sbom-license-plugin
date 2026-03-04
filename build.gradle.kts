@@ -116,7 +116,27 @@ publishing {
         } else {
             logger.warn("Skipping Sonatype repository configuration because no OSSRH credentials were found.")
         }
+        else -> false
     }
+
+    isRequired = signatoryConfigured
+
+    if (signatoryConfigured) {
+        sign(publishing.publications["mavenJava"])
+    } else {
+        val reason = if (hasInMemoryKeys || hasGpgConfiguration) {
+            "the provided signing configuration could not be applied"
+        } else {
+            "no signing credentials were provided"
+        }
+        logger.warn("Skipping artifact signing because $reason.")
+    }
+}
+
+val signingExtension = extensions.getByType<SigningExtension>()
+
+tasks.withType<Sign>().configureEach {
+    onlyIf { signingExtension.isRequired }
 }
 
 signing {
