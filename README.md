@@ -2,7 +2,7 @@
 
 [![CI Status](https://github.com/eurofunk/sbom-license-plugin/actions/workflows/gradle.yml/badge.svg)](https://github.com/eurofunk/sbom-license-plugin/actions/workflows/gradle.yml)
 [![GitHub license](https://img.shields.io/github/license/eurofunk/sbom-license-plugin)](https://github.com/eurofunk/sbom-license-plugin/blob/main/LICENSE)
-[![Gradle Plugin Portal](https://img.shields.io/maven-metadata/v?color=blue&label=Gradle%20Plugin%20Portal&metadataUrl=https%3A%2F%2Fplugins.gradle.org%2Fapi%2Fgradle%2Fcom.eurofunk.gradle.sbom-license-plugin%2Fmaven-metadata.xml)](https://plugins.gradle.org/plugin/com.eurofunk.gradle.sbom-license-plugin)
+[![Gradle Plugin Portal](https://img.shields.io/maven-metadata/v?color=blue&label=Gradle%20Plugin%20Portal&metadataUrl=https%3A%2F%2Fplugins.gradle.org%2Fapi%2Fgradle%2Fio.github.eurofunk.sbom-license-plugin%2Fmaven-metadata.xml)](https://plugins.gradle.org/plugin/com.eurofunk.gradle.sbom-license-plugin)
 
 The main purpose of this plugin is to provide a way how to check licenses of dependencies in the Gradle project based on
 the SBOM (software bill of material) file. To use this plugin, you need to have a valid SBOM file in your project. For
@@ -14,7 +14,7 @@ Apply the plugin to your project:
 
 ```kotlin
 plugins {
-    id("com.eurofunk.gradle.sbom-license-plugin") version "0.0.1"
+    id("io.github.eurofunk.sbom-license-plugin") version "0.0.1"
 }
 ```
 
@@ -158,3 +158,35 @@ tasks.checkLicenses {
     policiesFile = file("path/to/your/policies.json")
 }
 ```
+
+## Releasing
+
+The project [JReleaser](https://jreleaser.org/) for publishing to Maven Central and creating GitHub releases.
+
+### Triggering a Release
+
+Releases are triggered by creating and pushing a Git tag.
+
+#### Release via GitHub UI
+
+If you prefer to release directly from GitHub:
+
+1.  Navigate to your repository on GitHub.
+2.  Click on **Releases** -> **Draft a new release**.
+3.  Click **Choose a tag** and type the new version (e.g., `v1.0.0`).
+4.  Select **Create new tag on publish**.
+5.  Enter a release title and description.
+6.  Click **Publish release**.
+
+### Publishing Process
+
+#### Automatic Publishing (GitHub Actions)
+
+Once a tag is pushed (via either option above), the `Gradle Package` GitHub Action is triggered automatically. It performs the following:
+1.  Builds the project.
+2.  Stages the artifacts to a local directory.
+3.  Uses JReleaser to:
+    - Sign the artifacts with GPG.
+    - Deploy artifacts to **Maven Central Portal**.
+    - Create/Update a **GitHub Release** with the artifacts and changelog.
+4.  Publishes the plugin to the **Gradle Plugin Portal**.

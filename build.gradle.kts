@@ -1,14 +1,19 @@
+import org.jreleaser.model.Active
+import org.jreleaser.model.UpdateSection
+
 plugins {
-    id("com.gradle.plugin-publish") version "1.3.1"
+    alias(libs.plugins.jreleaser)
+    alias(libs.plugins.publish.plugin)
 }
 
-group = "com.eurofunk.gradle"
-version = "0.0.1"
+group = "io.github.eurofunk"
 
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
     }
+    withSourcesJar()
+    withJavadocJar()
 }
 
 repositories {
@@ -33,29 +38,102 @@ gradlePlugin {
     vcsUrl.set("https://github.com/eurofunk/sbom-license-plugin")
     plugins {
         register("sbom-license-plugin") {
-            id = "com.eurofunk.gradle.sbom-license-plugin"
+            id = "io.github.eurofunk.sbom-license-plugin"
             implementationClass = "com.eurofunk.gradle.sbom.license.SbomLicensePlugin"
             displayName = "SBOM License Plugin"
+            description = "A Gradle plugin to check SBOM licenses against a policy."
+            tags.set(listOf("sbom", "license", "compliance", "cyclonedx"))
         }
     }
 }
 
 publishing {
+    publications {
+        withType<MavenPublication> {
+            pom {
+                name.set("SBOM License Plugin")
+                description.set("A Gradle plugin to check SBOM licenses against a policy.")
+                url.set("https://github.com/eurofunk/sbom-license-plugin")
+                licenses {
+                    license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("eurofunk")
+                        name.set("Eurofunk Kappacher GmbH")
+                        email.set("art-workflow-manager@eurofunk.com")
+                    }
+                }
+                scm {
+                    connection.set("scm:git:git://github.com/eurofunk/sbom-license-plugin.git")
+                    developerConnection.set("scm:git:ssh://github.com:eurofunk/sbom-license-plugin.git")
+                    url.set("https://github.com/eurofunk/sbom-license-plugin")
+                }
+            }
+        }
+    }
     repositories {
-        mavenLocal()
-        repositories {
-            maven {
-                name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/eurofunk/sbom-license-plugin")
-                credentials {
-                    username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
-                    password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+        maven {
+            name = "Staging"
+            url = layout.buildDirectory.dir("staging-deploy").get().asFile.toURI()
+        }
+    }
+}
+
+jreleaser {
+    project {
+        description.set("A Gradle plugin to check SBOM licenses against a policy.")
+        copyright.set("Eurofunk Kappacher GmbH")
+        links {
+            homepage.set("https://github.com/eurofunk/sbom-license-plugin")
+        }
+    }
+    release {
+        github {
+            val isGithubAction = System.getenv("GITHUB_ACTIONS") == "true"
+            // if executed from github, tag is already created
+            skipTag.set(isGithubAction)
+            overwrite.set(true)
+            update {
+                enabled.set(true)
+                sections.add(UpdateSection.ASSETS)
+            }
+        }
+    }
+    signing {
+        active.set(Active.ALWAYS)
+        armored.set(true)
+    }
+    deploy {
+        active.set(Active.ALWAYS)
+        maven {
+            active.set(Active.ALWAYS)
+            mavenCentral {
+                create("sonatype") {
+                    active.set(Active.RELEASE)
+                    url.set("https://central.sonatype.com/api/v1/publisher")
+                    stagingRepository(layout.buildDirectory.dir("staging-deploy").get().asFile.absolutePath)
+                    sign.set(true)
+                }
+            }
+            nexus2 {
+                create("snapshot-deploy") {
+                    active.set(Active.SNAPSHOT)
+                    snapshotUrl.set("https://central.sonatype.com/repository/maven-snapshots/")
+                    applyMavenCentralRules.set(true)
+                    snapshotSupported.set(true)
+                    closeRepository.set(true)
+                    releaseRepository.set(true)
+                    stagingRepository(layout.buildDirectory.dir("staging-deploy").get().asFile.absolutePath)
+                    sign.set(true)
                 }
             }
         }
     }
 }
-
 
 // Add a source set for the functional test suite
 val functionalTestSourceSet = sourceSets.create("functionalTest") {
