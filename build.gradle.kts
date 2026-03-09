@@ -1,10 +1,17 @@
 plugins {
     id("com.gradle.plugin-publish") version "1.3.1"
     id("signing")
+    id("pl.allegro.tech.build.axion-release") version "1.21.1"
 }
 
 group = "com.eurofunk.gradle"
-version = "0.0.1"
+
+scmVersion {
+    tag {
+        prefix.set("v")
+    }
+}
+version = scmVersion.version
 
 java {
     toolchain {

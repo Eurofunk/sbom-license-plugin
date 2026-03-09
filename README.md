@@ -158,3 +158,48 @@ tasks.checkLicenses {
     policiesFile = file("path/to/your/policies.json")
 }
 ```
+
+## Releasing
+
+The project uses the [axion-release-plugin](https://github.com/allegro/axion-release-plugin) to manage versioning through Git tags.
+
+### Option 1: Release via Command Line (Recommended)
+
+This is the preferred way as it ensures your local environment is clean and correctly tagged.
+
+1.  **Check current version:**
+    ```bash
+    ./gradlew currentVersion
+    ```
+
+2.  **Perform a release:**
+    To release a specific version (e.g., `1.0.0`):
+    ```bash
+    ./gradlew release -Prelease.version=1.0.0
+    ```
+    This command will:
+    - Validate that there are no uncommitted changes.
+    - Create a git tag `v1.0.0`.
+    - Push the tag to the remote repository.
+
+3.  **Automatic Publishing:**
+    Pushing the tag triggers the GitHub Actions workflow to build and publish the plugin.
+
+### Option 2: Release via GitHub UI
+
+If you prefer to release directly from GitHub:
+
+1.  Navigate to your repository on GitHub.
+2.  Click on **Releases** -> **Draft a new release**.
+3.  Click **Choose a tag** and type the new version (e.g., `v1.0.0`).
+4.  Select **Create new tag on publish**.
+5.  Enter a release title and description.
+6.  Click **Publish release**.
+
+**Note:** The `axion-release-plugin` will detect the tag in the GitHub Actions environment and use it as the version for publishing.
+
+### Versioning Strategy
+
+- **Development:** The version is automatically calculated as `X.Y.Z-SNAPSHOT`.
+- **Release:** The version is stripped of the `-SNAPSHOT` suffix when a tag is present.
+- **Next Iteration:** After a release, the plugin automatically increments the patch version for the next development cycle (e.g., after releasing `1.0.0`, the next version becomes `1.0.1-SNAPSHOT`).
