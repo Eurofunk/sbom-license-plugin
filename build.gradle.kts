@@ -93,15 +93,11 @@ publishing {
 }
 
 signing {
-    val signingKeyId = project.findProperty("signingKeyId") as String? ?: System.getenv("SIGNING_KEY_ID")
-    val signingKey = project.findProperty("signingKey") as String? ?: System.getenv("SIGNING_KEY")
-    val signingPassword = project.findProperty("signingPassword") as String? ?: System.getenv("SIGNING_PASSWORD")
+    val signingKey = (project.findProperty("signingKey") as String? ?: System.getenv("SIGNING_KEY"))?.takeIf { it.isNotBlank() }
+    val signingPassword = (project.findProperty("signingPassword") as String? ?: System.getenv("SIGNING_PASSWORD"))?.takeIf { it.isNotBlank() }
+
     if (signingKey != null && signingPassword != null) {
-        if (signingKeyId != null) {
-            useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
-        } else {
-            useInMemoryPgpKeys(signingKey, signingPassword)
-        }
+        useInMemoryPgpKeys(signingKey, signingPassword)
         sign(publishing.publications)
     } else {
         isRequired = false
