@@ -34,7 +34,7 @@ class SbomLicensePluginPluginFunctionalTest {
             """;
     private static final String PLUGIN_DEFINITION = """
             plugins {
-                id("com.eurofunk.gradle.sbom-license-plugin")
+                id("io.github.eurofunk.sbom-license-plugin")
             }
             """;
     private static final String INLINE_POLICY_COORDINATES_MATCHES_COM_EXAMPLE = """           
