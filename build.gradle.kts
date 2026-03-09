@@ -4,7 +4,7 @@ plugins {
     id("pl.allegro.tech.build.axion-release") version "1.21.1"
 }
 
-group = "com.eurofunk.gradle"
+group = "io.github.eurofunk"
 
 scmVersion {
     tag {
@@ -97,8 +97,10 @@ publishing {
                 uri("https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/")
             }
             credentials {
-                username = project.findProperty("ossrhUsername") as String? ?: System.getenv("OSSRH_USERNAME")
-                password = project.findProperty("ossrhPassword") as String? ?: System.getenv("OSSRH_PASSWORD")
+                //username = project.findProperty("ossrhUsername") as String? ?: System.getenv("OSSRH_USERNAME")
+                //password = project.findProperty("ossrhPassword") as String? ?: System.getenv("OSSRH_PASSWORD")
+                username = project.findProperty("CENTRALUSERNAME") as String?
+                password = project.findProperty("CENTRALPASSWORD") as String?
             }
         }
     }

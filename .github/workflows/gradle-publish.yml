@@ -47,6 +47,8 @@ jobs:
           SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_CENTRALPASSWORD: ${{ secrets.ORG_GRADLE_PROJECT_CENTRALPASSWORD }}
+          ORG_GRADLE_PROJECT_CENTRALUSERNAME: ${{ secrets.ORG_GRADLE_PROJECT_CENTRALUSERNAME }}
 
       - name: Publish to Gradle Plugin Portal
         run: ./gradlew publishPlugins
