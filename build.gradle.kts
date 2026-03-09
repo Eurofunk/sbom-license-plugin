@@ -92,9 +92,9 @@ publishing {
             name = "OSSRH"
             val isSnapshot = version.toString().endsWith("-SNAPSHOT")
             url = if (isSnapshot) {
-                uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+                uri("https://central.sonatype.com/repository/maven-snapshots/")
             } else {
-                uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+                uri("https://ossrh-staging-api.central.sonatype.com/service/local/")
             }
             credentials {
                 username = project.findProperty("ossrhUsername") as String? ?: System.getenv("OSSRH_USERNAME")
