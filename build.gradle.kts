@@ -94,7 +94,7 @@ publishing {
             url = if (isSnapshot) {
                 uri("https://central.sonatype.com/repository/maven-snapshots/")
             } else {
-                uri("https://ossrh-staging-api.central.sonatype.com/service/local/")
+                uri("https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/")
             }
             credentials {
                 username = project.findProperty("ossrhUsername") as String? ?: System.getenv("OSSRH_USERNAME")
