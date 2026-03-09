@@ -1,5 +1,6 @@
 plugins {
     id("com.gradle.plugin-publish") version "1.3.1"
+    id("signing")
 }
 
 group = "com.eurofunk.gradle"
@@ -36,23 +37,74 @@ gradlePlugin {
             id = "com.eurofunk.gradle.sbom-license-plugin"
             implementationClass = "com.eurofunk.gradle.sbom.license.SbomLicensePlugin"
             displayName = "SBOM License Plugin"
+            description = "A Gradle plugin to check SBOM licenses against a policy."
+            tags.set(listOf("sbom", "license", "compliance", "cyclonedx"))
         }
     }
 }
 
 publishing {
-    repositories {
-        mavenLocal()
-        repositories {
-            maven {
-                name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/eurofunk/sbom-license-plugin")
-                credentials {
-                    username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
-                    password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+    publications {
+        withType<MavenPublication> {
+            pom {
+                name.set("SBOM License Plugin")
+                description.set("A Gradle plugin to check SBOM licenses against a policy.")
+                url.set("https://github.com/eurofunk/sbom-license-plugin")
+                licenses {
+                    license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("eurofunk")
+                        name.set("Eurofunk Kappacher GmbH")
+                        email.set("opensource@eurofunk.com")
+                    }
+                }
+                scm {
+                    connection.set("scm:git:git://github.com/eurofunk/sbom-license-plugin.git")
+                    developerConnection.set("scm:git:ssh://github.com:eurofunk/sbom-license-plugin.git")
+                    url.set("https://github.com/eurofunk/sbom-license-plugin")
                 }
             }
         }
+    }
+    repositories {
+        mavenLocal()
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/eurofunk/sbom-license-plugin")
+            credentials {
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
+                password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+            }
+        }
+        maven {
+            name = "OSSRH"
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            credentials {
+                username = project.findProperty("ossrhUsername") as String? ?: System.getenv("OSSRH_USERNAME")
+                password = project.findProperty("ossrhPassword") as String? ?: System.getenv("OSSRH_PASSWORD")
+            }
+        }
+    }
+}
+
+signing {
+    val signingKeyId = project.findProperty("signingKeyId") as String? ?: System.getenv("SIGNING_KEY_ID")
+    val signingKey = project.findProperty("signingKey") as String? ?: System.getenv("SIGNING_KEY")
+    val signingPassword = project.findProperty("signingPassword") as String? ?: System.getenv("SIGNING_PASSWORD")
+    if (signingKey != null && signingPassword != null) {
+        if (signingKeyId != null) {
+            useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+        } else {
+            useInMemoryPgpKeys(signingKey, signingPassword)
+        }
+        sign(publishing.publications)
+    } else {
+        isRequired = false
     }
 }
 
