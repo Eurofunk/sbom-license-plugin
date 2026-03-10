@@ -1,7 +1,7 @@
 plugins {
     id("com.gradle.plugin-publish") version "1.3.1"
-    id("signing")
     id("pl.allegro.tech.build.axion-release") version "1.21.1"
+    alias(libs.plugins.jreleaser)
 }
 
 group = "io.github.eurofunk"
@@ -17,6 +17,8 @@ java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
     }
+    withSourcesJar()
+    withJavadocJar()
 }
 
 repositories {
@@ -79,42 +81,38 @@ publishing {
         }
     }
     repositories {
-        mavenLocal()
         maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/eurofunk/sbom-license-plugin")
-            credentials {
-                username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
-            }
-        }
-        maven {
-            name = "OSSRH"
-            val isSnapshot = version.toString().endsWith("-SNAPSHOT")
-            url = if (isSnapshot) {
-                uri("https://central.sonatype.com/repository/maven-snapshots/")
-            } else {
-                uri("https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/")
-            }
-            credentials {
-                //username = project.findProperty("ossrhUsername") as String? ?: System.getenv("OSSRH_USERNAME")
-                //password = project.findProperty("ossrhPassword") as String? ?: System.getenv("OSSRH_PASSWORD")
-                username = project.findProperty("CENTRALUSERNAME") as String?
-                password = project.findProperty("CENTRALPASSWORD") as String?
-            }
+            name = "Staging"
+            url = layout.buildDirectory.dir("staging-deploy").get().asFile.toURI()
         }
     }
 }
 
-signing {
-    val signingKey = (project.findProperty("signingKey") as String? ?: System.getenv("SIGNING_KEY"))?.takeIf { it.isNotBlank() }
-    val signingPassword = (project.findProperty("signingPassword") as String? ?: System.getenv("SIGNING_PASSWORD"))?.takeIf { it.isNotBlank() }
-
-    if (signingKey != null && signingPassword != null) {
-        useInMemoryPgpKeys(signingKey, signingPassword)
-        sign(publishing.publications)
-    } else {
-        isRequired = false
+jreleaser {
+    project {
+        copyright.set("Eurofunk Kappacher GmbH")
+        links {
+            homepage.set("https://github.com/eurofunk/sbom-license-plugin")
+        }
+    }
+    release {
+        github {
+            overwrite.set(true)
+        }
+    }
+    signing {
+        active.set(org.jreleaser.model.Active.ALWAYS)
+        armored.set(true)
+    }
+    deploy {
+        maven {
+            mavenCentral {
+                register("sonatype") {
+                    active.set(org.jreleaser.model.Active.ALWAYS)
+                    stagingRepositories.add(layout.buildDirectory.dir("staging-deploy").get().asFile.absolutePath)
+                }
+            }
+        }
     }
 }
 

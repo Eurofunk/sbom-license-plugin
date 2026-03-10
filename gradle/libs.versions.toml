@@ -1,6 +1,7 @@
 [versions]
 jackson = "2.19.0"
 junit-jupiter = "5.12.1"
+jreleaser = "1.17.0"
 
 
 [libraries]
@@ -14,3 +15,6 @@ spdx-utils = { module = "org.ossreviewtoolkit.utils:spdx-utils", version = "59.2
 
 [bundles]
 jackson = ["jackson-annotations", "jackson-databind"]
+
+[plugins]
+jreleaser = { id = "org.jreleaser", version.ref = "jreleaser" }

@@ -161,9 +161,13 @@ tasks.checkLicenses {
 
 ## Releasing
 
-The project uses the [axion-release-plugin](https://github.com/allegro/axion-release-plugin) to manage versioning through Git tags.
+The project uses the [axion-release-plugin](https://github.com/allegro/axion-release-plugin) to manage versioning through Git tags and [JReleaser](https://jreleaser.org/) for publishing to Maven Central and creating GitHub releases.
 
-### Option 1: Release via Command Line (Recommended)
+### Triggering a Release
+
+Releases are triggered by creating and pushing a Git tag.
+
+#### Option 1: Release via Command Line (Recommended)
 
 This is the preferred way as it ensures your local environment is clean and correctly tagged.
 
@@ -182,10 +186,7 @@ This is the preferred way as it ensures your local environment is clean and corr
     - Create a git tag `v1.0.0`.
     - Push the tag to the remote repository.
 
-3.  **Automatic Publishing:**
-    Pushing the tag triggers the GitHub Actions workflow to build and publish the plugin.
-
-### Option 2: Release via GitHub UI
+#### Option 2: Release via GitHub UI
 
 If you prefer to release directly from GitHub:
 
@@ -197,6 +198,32 @@ If you prefer to release directly from GitHub:
 6.  Click **Publish release**.
 
 **Note:** The `axion-release-plugin` will detect the tag in the GitHub Actions environment and use it as the version for publishing.
+
+### Publishing Process
+
+#### Automatic Publishing (GitHub Actions)
+
+Once a tag is pushed (via either option above), the `Gradle Package` GitHub Action is triggered automatically. It performs the following:
+1.  Builds the project.
+2.  Stages the artifacts to a local directory.
+3.  Uses JReleaser to:
+    - Sign the artifacts with GPG.
+    - Deploy artifacts to **Maven Central Portal**.
+    - Create/Update a **GitHub Release** with the artifacts and changelog.
+4.  Publishes the plugin to the **Gradle Plugin Portal**.
+
+#### Local Publishing (Manual)
+
+If you need to perform the publishing steps manually from your local machine (e.g., for troubleshooting), you will need the necessary secrets (GPG keys, Sonatype credentials) configured in your `~/.gradle/gradle.properties` or as environment variables.
+
+1.  **Stage artifacts locally:**
+    ```bash
+    ./gradlew publish
+    ```
+2.  **Deploy and Release with JReleaser:**
+    ```bash
+    ./gradlew jreleaserDeploy jreleaserRelease
+    ```
 
 ### Versioning Strategy
 
