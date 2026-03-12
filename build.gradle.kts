@@ -11,7 +11,7 @@ scmVersion {
         prefix.set("v")
     }
 }
-version = scmVersion.version
+version = if (scmVersion.version.isNullOrEmpty() || scmVersion.version.endsWith("-")) "0.1.0-SNAPSHOT" else scmVersion.version
 
 java {
     toolchain {
@@ -119,13 +119,15 @@ jreleaser {
 }
 
 
-val prepareJReleaser by tasks.registering {
+val prepareJReleaser = tasks.register("prepareJReleaser") {
+    val outputDir = layout.buildDirectory.dir("jreleaser")
+    outputs.dir(outputDir)
     doLast {
-        layout.buildDirectory.dir("jreleaser").get().asFile.mkdirs()
+        outputDir.get().asFile.mkdirs()
     }
 }
 
-tasks.withType<org.jreleaser.gradle.plugin.tasks.AbstractJReleaserTask> {
+tasks.withType<org.jreleaser.gradle.plugin.tasks.AbstractJReleaserTask>().configureEach {
     dependsOn(prepareJReleaser)
 }
 
