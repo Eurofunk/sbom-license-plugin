@@ -1,7 +1,7 @@
 [versions]
 jackson = "2.19.0"
 junit-jupiter = "5.12.1"
-jreleaser = "1.16.0"
+jreleaser = "1.23.0"
 
 
 [libraries]
