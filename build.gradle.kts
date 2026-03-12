@@ -35,7 +35,7 @@ gradlePlugin {
     vcsUrl.set("https://github.com/eurofunk/sbom-license-plugin")
     plugins {
         register("sbom-license-plugin") {
-            id = "com.eurofunk.gradle.sbom-license-plugin"
+            id = "io.github.eurofunk.sbom-license-plugin"
             implementationClass = "com.eurofunk.gradle.sbom.license.SbomLicensePlugin"
             displayName = "SBOM License Plugin"
             description = "A Gradle plugin to check SBOM licenses against a policy."
