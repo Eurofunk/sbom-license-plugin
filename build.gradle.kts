@@ -117,10 +117,14 @@ jreleaser {
 }
 
 
-tasks.withType<org.jreleaser.gradle.plugin.tasks.AbstractJReleaserTask> {
-    if (name != "jreleaserConfig") {
-        dependsOn("jreleaserConfig")
+val prepareJReleaser by tasks.registering {
+    doLast {
+        layout.buildDirectory.dir("jreleaser").get().asFile.mkdirs()
     }
+}
+
+tasks.withType<org.jreleaser.gradle.plugin.tasks.AbstractJReleaserTask> {
+    dependsOn(prepareJReleaser)
 }
 
 // Add a source set for the functional test suite
