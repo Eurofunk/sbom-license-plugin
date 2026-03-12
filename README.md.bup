@@ -10,7 +10,7 @@ Apply the plugin to your project:
 
 ```kotlin
 plugins {
-    id("com.eurofunk.gradle.sbom-license-plugin") version "{{project.version}}"
+    id("io.github.eurofunk.sbom-license-plugin") version "{{project.version}}"
 }
 ```
 
