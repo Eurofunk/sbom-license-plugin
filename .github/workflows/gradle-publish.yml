@@ -44,10 +44,8 @@ jobs:
 
       - name: Release via JReleaser
         # gradle cache is broken, enable it when https://github.com/jreleaser/jreleaser/issues/1992 fixed
-        run: ./gradlew jreleaserFullRelease --no-configuration-cache
+        run: ./gradlew jreleaserFullRelease -Pversion=${{ env.RELEASE_VERSION }} --no-configuration-cache
         env:
-          # Explicitly tell JReleaser the version
-          JRELEASER_PROJECT_VERSION: ${{ env.RELEASE_VERSION }}
           # GitHub token for creating the release
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -61,7 +59,7 @@ jobs:
           JRELEASER_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Publish to Gradle Plugin Portal
-        run: ./gradlew publishPlugins -Pversion=${{ env.RELEASE_VERSION }}
+        run: ./gradlew publishPlugins
         env:
           GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY }}
           GRADLE_PUBLISH_SECRET: ${{ secrets.GRADLE_PUBLISH_SECRET  }}
