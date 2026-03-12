@@ -43,7 +43,8 @@ jobs:
         run: ./gradlew publishAllPublicationsToStagingRepository
 
       - name: Release via JReleaser
-        run: ./gradlew jreleaserFullRelease
+        # gradle cache is broken, enable it when https://github.com/jreleaser/jreleaser/issues/1992 fixed
+        run: ./gradlew jreleaserFullRelease --no-configuration-cache
         env:
           # Explicitly tell JReleaser the version
           JRELEASER_PROJECT_VERSION: ${{ env.RELEASE_VERSION }}
