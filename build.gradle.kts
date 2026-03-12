@@ -90,6 +90,7 @@ publishing {
 
 jreleaser {
     project {
+        description.set("A Gradle plugin to check SBOM licenses against a policy.")
         copyright.set("Eurofunk Kappacher GmbH")
         links {
             homepage.set("https://github.com/eurofunk/sbom-license-plugin")
@@ -109,6 +110,7 @@ jreleaser {
             mavenCentral {
                 create("sonatype") {
                     active.set(org.jreleaser.model.Active.ALWAYS)
+                    url.set("https://central.sonatype.com/api/v1/publisher")
                     stagingRepository(layout.buildDirectory.dir("staging-deploy").get().asFile.absolutePath)
                 }
             }
