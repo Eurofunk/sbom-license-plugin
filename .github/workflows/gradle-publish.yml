@@ -42,8 +42,7 @@ jobs:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: JReleaser Deploy and Release
-        #run: ./gradlew jreleaserDeploy jreleaserRelease
-        run: ./gradlew jreleaserFullRelease
+        run: ./gradlew jreleaserDeploy jreleaserRelease
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JRELEASER_MAVENCENTRAL_SONATYPE_USERNAME: ${{ secrets.ORG_GRADLE_PROJECT_CENTRALUSERNAME }}
