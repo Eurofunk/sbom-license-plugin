@@ -44,7 +44,7 @@ jobs:
 
       - name: Release via JReleaser
         # gradle cache is broken, enable it when https://github.com/jreleaser/jreleaser/issues/1992 fixed
-        run: ./gradlew jreleaserFullRelease -Pversion=${{ env.RELEASE_VERSION }} --no-configuration-cache
+        run: ./gradlew jreleaserFullRelease -Pversion=${{ env.RELEASE_VERSION }} --no-configuration-cache --stacktrace
         env:
           # GitHub token for creating the release
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
