@@ -117,6 +117,12 @@ jreleaser {
 }
 
 
+tasks.withType<org.jreleaser.gradle.plugin.tasks.AbstractJReleaserTask> {
+    if (name != "jreleaserConfig") {
+        dependsOn("jreleaserConfig")
+    }
+}
+
 // Add a source set for the functional test suite
 val functionalTestSourceSet = sourceSets.create("functionalTest") {
 }
