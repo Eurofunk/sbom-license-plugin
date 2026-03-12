@@ -1,7 +1,7 @@
 plugins {
-    id("com.gradle.plugin-publish") version "1.3.1"
-    id("pl.allegro.tech.build.axion-release") version "1.21.1"
+    alias(libs.plugins.axion.release)
     alias(libs.plugins.jreleaser)
+    alias(libs.plugins.publish.plugin)
 }
 
 group = "io.github.eurofunk"
@@ -69,7 +69,7 @@ publishing {
                     developer {
                         id.set("eurofunk")
                         name.set("Eurofunk Kappacher GmbH")
-                        email.set("opensource@eurofunk.com")
+                        email.set("art-workflow-manager@eurofunk.com")
                     }
                 }
                 scm {
@@ -107,9 +107,9 @@ jreleaser {
     deploy {
         maven {
             mavenCentral {
-                register("sonatype") {
+                create("sonatype") {
                     active.set(org.jreleaser.model.Active.ALWAYS)
-                    stagingRepositories.add(layout.buildDirectory.dir("staging-deploy").get().asFile.absolutePath)
+                    stagingRepository(layout.buildDirectory.dir("staging-deploy").get().asFile.absolutePath)
                 }
             }
         }
