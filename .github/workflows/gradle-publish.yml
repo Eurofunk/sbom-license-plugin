@@ -32,30 +32,37 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
 
+      - name: Extract version from release
+        id: extract_version
+        run: echo "RELEASE_VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+
       - name: Build with Gradle
         run: ./gradlew build
 
       - name: Publish to Staging Repository
-        run: ./gradlew publish
-        env:
-          USERNAME: ${{ github.actor }}
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew publishAllPublicationsToStagingRepository
 
-      - name: JReleaser Deploy and Release
-        run: ./gradlew jreleaserDeploy jreleaserRelease
+      - name: Release via JReleaser
+        run: ./gradlew jreleaserFullRelease
         env:
+          # Explicitly tell JReleaser the version
+          JRELEASER_PROJECT_VERSION: ${{ env.RELEASE_VERSION }}
+          # GitHub token for creating the release
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          JRELEASER_MAVENCENTRAL_SONATYPE_USERNAME: ${{ secrets.ORG_GRADLE_PROJECT_CENTRALUSERNAME }}
-          JRELEASER_MAVENCENTRAL_SONATYPE_PASSWORD: ${{ secrets.ORG_GRADLE_PROJECT_CENTRALPASSWORD }}
-          JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.SIGNING_PUBLIC_KEY }}
-          JRELEASER_GPG_SECRET_KEY: ${{ secrets.SIGNING_KEY }}
-          JRELEASER_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
+
+          # Sonatype Credentials
+          JRELEASER_MAVENCENTRAL_SONATYPE_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          JRELEASER_MAVENCENTRAL_SONATYPE_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+
+          # GPG Credentials
+          JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.GPG_PUBLIC_KEY }}
+          JRELEASER_GPG_SECRET_KEY: ${{ secrets.GPG_SECRET_KEY }}
+          JRELEASER_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Publish to Gradle Plugin Portal
-        run: ./gradlew publishPlugins
+        run: ./gradlew publishPlugins -Pversion=${{ env.RELEASE_VERSION }}
         env:
           GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY }}
           GRADLE_PUBLISH_SECRET: ${{ secrets.GRADLE_PUBLISH_SECRET  }}
-          SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
-          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
-          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          SIGNING_KEY: ${{ secrets.GPG_SECRET_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.GPG_PASSPHRASE }}

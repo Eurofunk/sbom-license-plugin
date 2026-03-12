@@ -1,17 +1,9 @@
 plugins {
-    alias(libs.plugins.axion.release)
     alias(libs.plugins.jreleaser)
     alias(libs.plugins.publish.plugin)
 }
 
 group = "io.github.eurofunk"
-
-scmVersion {
-    tag {
-        prefix.set("v")
-    }
-}
-version = if (scmVersion.version.isNullOrEmpty() || scmVersion.version.endsWith("-")) "0.1.0-SNAPSHOT" else scmVersion.version
 
 java {
     toolchain {
@@ -112,23 +104,11 @@ jreleaser {
                     active.set(org.jreleaser.model.Active.ALWAYS)
                     url.set("https://central.sonatype.com/api/v1/publisher")
                     stagingRepository(layout.buildDirectory.dir("staging-deploy").get().asFile.absolutePath)
+                    sign.set(true)
                 }
             }
         }
     }
-}
-
-
-val prepareJReleaser = tasks.register("prepareJReleaser") {
-    val outputDir = layout.buildDirectory.dir("jreleaser")
-    outputs.dir(outputDir)
-    doLast {
-        outputDir.get().asFile.mkdirs()
-    }
-}
-
-tasks.withType<org.jreleaser.gradle.plugin.tasks.AbstractJReleaserTask>().configureEach {
-    dependsOn(prepareJReleaser)
 }
 
 // Add a source set for the functional test suite
