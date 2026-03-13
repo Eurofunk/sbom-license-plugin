@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @JsonSubTypes.Type(value = OrCondition.class, name = "OR"),
         @JsonSubTypes.Type(value = CoordinatesCondition.class, name = "COORDINATES"),
         @JsonSubTypes.Type(value = LicenseGroupCondition.class, name = "LICENSE_GROUP"),
+        @JsonSubTypes.Type(value = LicenseCountCondition.class, name = "LICENSE_COUNT"),
 })
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface PolicyCondition {

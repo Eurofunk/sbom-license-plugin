@@ -29,6 +29,7 @@ class SbomLicensePluginPluginFunctionalTest {
             import com.eurofunk.gradle.sbom.license.ComponentBuilder
             import com.eurofunk.gradle.sbom.license.ExpressionBuilder
             import com.eurofunk.gradle.sbom.license.policy.model.CoordinatesCondition
+            import com.eurofunk.gradle.sbom.license.policy.model.LicenseCountCondition
             import com.eurofunk.gradle.sbom.license.policy.model.LicenseGroupCondition
             import com.eurofunk.gradle.sbom.license.policy.model.Policy
             """;
@@ -48,6 +49,13 @@ class SbomLicensePluginPluginFunctionalTest {
             policies = listOf(
                 Policy(
                     "permissive license", LicenseGroupCondition("Permissive", LicenseGroupCondition.Operator.IS)
+                )
+            )
+            """;
+    private static final String INLINE_POLICY_LICENSE_COUNT_GREATER_THAN_ONE = """
+            policies = listOf(
+                Policy(
+                    "Fail on more than one license", LicenseCountCondition(1, LicenseCountCondition.Operator.GREATER_THAN)
                 )
             )
             """;
@@ -288,6 +296,67 @@ class SbomLicensePluginPluginFunctionalTest {
 
         String build() {
             return content.toString();
+        }
+    }
+
+    @Test
+    void whenComponentHasMoreLicensesThanAllowed_evaluationFails() throws IOException {
+        final String buildFile = BuildFileBuilder.create()
+                .append(POLICY_IMPORTS)
+                .append(PLUGIN_DEFINITION)
+                .beginCheckLicenses()
+                .appendTaskPart(INLINE_POLICY_LICENSE_COUNT_GREATER_THAN_ONE)
+                .appendTaskFile("sbomFile", "sbom_com-example-eurofunk.json")
+                .endCheckLicenses()
+                .build();
+
+        writeString(getSettingsFile(), "");
+        writeString(getBuildFile(), buildFile);
+
+        copyResourcesFileToTargetDir("sbom_com-example-eurofunk.json");
+
+        try (final StringWriter writer = new StringWriter()) {
+            final GradleRunner runner = GradleRunner.create()
+                    .withProjectDir(projectDir)
+                    .withArguments("checkLicenses")
+                    .withPluginClasspath()
+                    .forwardOutput()
+                    .withDebug(true)
+                    .forwardStdError(writer);
+
+            assertThrows(UnexpectedBuildResultException.class, runner::build);
+            final String output = writer.toString();
+            assertTrue(output.contains("Policy [Fail on more than one license] has violations"));
+        }
+    }
+
+    @Test
+    void whenComponentHasAllowedNumberOfLicenses_evaluationSucceeds() throws IOException {
+        final String buildFile = BuildFileBuilder.create()
+                .append(POLICY_IMPORTS)
+                .append(PLUGIN_DEFINITION)
+                .beginCheckLicenses()
+                .appendTaskPart(INLINE_POLICY_LICENSE_COUNT_GREATER_THAN_ONE)
+                .appendTaskFile("sbomFile", "sbom_com-example-single-license.json")
+                .endCheckLicenses()
+                .build();
+
+        writeString(getSettingsFile(), "");
+        writeString(getBuildFile(), buildFile);
+
+        copyResourcesFileToTargetDir("sbom_com-example-single-license.json");
+
+        try (final StringWriter writer = new StringWriter()) {
+            final GradleRunner runner = GradleRunner.create()
+                    .withProjectDir(projectDir)
+                    .withArguments("checkLicenses")
+                    .withPluginClasspath()
+                    .withDebug(true)
+                    .forwardStdOutput(writer)
+                    .forwardStdError(writer);
+            runner.build();
+            final String output = writer.toString();
+            assertTrue(output.contains("No policy violations detected. All dependencies are compliant with the configured policies."));
         }
     }
 }

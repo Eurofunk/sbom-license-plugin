@@ -5,6 +5,7 @@ import com.eurofunk.gradle.sbom.license.policy.model.DependenciesCheck;
 import com.eurofunk.gradle.sbom.license.policy.model.EvaluationResult;
 import com.eurofunk.gradle.sbom.license.policy.model.LicenseGroups;
 import com.eurofunk.gradle.sbom.license.policy.model.Policy;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -315,7 +316,14 @@ public class CheckLicensesTask extends DefaultTask {
             if (result.isSuccess()) {
                 getLogger().debug("Policy [{}] evaluated without errors", policy.name());
             } else {
-                getLogger().error("Policy [{}] has violations: [{}]", policy.name(), result.getViolations());
+                final ObjectMapper objectMapper = new ObjectMapper();
+                try {
+                    getLogger().error("Policy [{}] has violations: [{}]", policy.name(),
+                            objectMapper.writeValueAsString(result.getViolations()));
+                } catch (JsonProcessingException e) {
+                    getLogger().error("Policy [{}] has violations: [{}]", policy.name(),
+                            result.getViolations().toString());
+                }
             }
         });
 

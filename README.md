@@ -76,12 +76,12 @@ tasks.checkLicenses {
     )
 }
 ```
+
 ```kotlin
 tasks.checkLicenses {
     policiesFile = file("path/to/your/policies.json")
 }
 ```
-
 
 ##### LicenseGroupCondition
 
@@ -115,12 +115,15 @@ tasks.checkLicenses {
     )
 }
 ```
+
 ```kotlin
 tasks.checkLicenses {
     licenseGroupsFile = file("path/to/your/license-groups.json")
 }
 ```
-There is also a possibility to define a custom licenses in case the license is not party of any license or there's no license at all. This can be done using the `customLicenses` or `customLicensesFile` properties.
+
+There is also a possibility to define a custom licenses in case the license is not party of any license or there's no
+license at all. This can be done using the `customLicenses` or `customLicensesFile` properties.
 
 ```kotlin
 tasks.checkLicenses {
@@ -130,6 +133,7 @@ tasks.checkLicenses {
     )
 }
 ```
+
 ```kotlin
 tasks.checkLicenses {
     customLicensesFile = file("path/to/your/custom-licenses.json")
@@ -137,7 +141,9 @@ tasks.checkLicenses {
 ```
 
 ##### CoordinatesCondition
-With policy `CoordinatesCondition` it's possible to validate if dependency coordinates match a specific pattern. The pattern can be a simple string or a regex pattern. The operator can be set to either `MATCHES` or `DOES_NOT_MATCH`.
+
+With policy `CoordinatesCondition` it's possible to validate if dependency coordinates match a specific pattern. The
+pattern can be a simple string or a regex pattern. The operator can be set to either `MATCHES` or `DOES_NOT_MATCH`.
 
 ```kotlin
 tasks.checkLicenses {
@@ -153,9 +159,44 @@ tasks.checkLicenses {
     )
 }
 ```
+
 ```kotlin
 tasks.checkLicenses {
     policiesFile = file("path/to/your/policies.json")
+}
+```
+
+##### LicenseCountCondition
+
+With policy `LicenseCountCondition` it's possible to validate whether component contains desired number of licenses. 
+This is useful for example when you want to ensure that each component has at least one license or to flag components with multiple licenses (dual licensing).
+
+When evaluating SPDX expressions, all licenses mentioned in the expression are counted, regardless of the operators (`OR`, `AND`) used. 
+For example, `MIT OR Apache-2.0` and `MIT AND Apache-2.0` both count as 2 licenses.
+
+Operators:
+- `EQUALS`: Violation if the number of licenses is exactly equal to the configured count.
+- `GREATER_THAN`: Violation if the number of licenses is greater than the configured count.
+- `LESS_THAN`: Violation if the number of licenses is less than the configured count.
+
+```kotlin
+tasks.checkLicenses {
+    policies = listOf(
+        Policy(
+            name = "Ensure at least one license",
+            rootCondition = LicenseCountCondition(
+                count = 1,
+                operator = LicenseCountCondition.Operator.LESS_THAN
+            )
+        ),
+        Policy(
+            name = "Flag dual licensing",
+            rootCondition = LicenseCountCondition(
+                count = 1,
+                operator = LicenseCountCondition.Operator.GREATER_THAN
+            )
+        )
+    )
 }
 ```
 

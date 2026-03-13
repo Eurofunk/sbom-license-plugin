@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class LicenseGroupConditionEvaluator implements PolicyConditionEvaluator<LicenseGroupCondition> {
 
@@ -70,15 +71,25 @@ public class LicenseGroupConditionEvaluator implements PolicyConditionEvaluator<
 
         if (fails) {
             final String message = String.format(
-                    "Component [%s] license group %s the group '%s'",
+                    "Component [%s] license group %s the group '%s'. Current licenses [%s]",
                     ComponentUtils.componentString(component),
                     operatorToString(condition.operator()),
-                    condition.groupName()
+                    condition.groupName(),
+                    concatLicenses(component.getLicenses().getLicenses())
             );
             return EvaluationResult.failure(condition, component, message);
         }
 
         return EvaluationResult.success();
+    }
+
+    private String concatLicenses(final List<License> licenses) {
+        return Optional.ofNullable(licenses)
+                .map(lics -> lics.stream()
+                        .map(l -> l.getId() != null ? l.getId() : l.getName())
+                        .collect(Collectors.joining(",")))
+                .orElse(null);
+
     }
 
     private EvaluationResult evaluateExpression(
@@ -87,39 +98,39 @@ public class LicenseGroupConditionEvaluator implements PolicyConditionEvaluator<
             final LicenseChoice licenseChoice,
             final List<String> licensesOfGroup) {
 
-            final SpdxExpression expression = SpdxExpression.parse(licenseChoice.getExpression().getValue());
-            if (!isValidLicenseExpression(expression)) {
-                return EvaluationResult.failure(condition, component,
-                        "License expression [%s] is not valid".formatted(expression.toString()));
-            }
-            switch (expression) {
-                case SpdxCompoundExpression compoundExpression -> {
-                    final EvaluationResult result = validateCompoundExpression(condition, component,
-                            compoundExpression, licensesOfGroup);
-                    if (!result.isSuccess()) {
-                        return result;
-                    }
-                }
-                case SpdxSingleLicenseExpression singleLicenseExpression -> {
-                    final List<String> componentLicenses = currentLicensesIds(component.getLicenses());
-                    final EvaluationResult result = validateSingleLicenseExpression(
-                            condition,
-                            component,
-                            singleLicenseExpression,
-                            componentLicenses,
-                            licensesOfGroup
-                    );
-                    if (!result.isSuccess()) {
-                        return result;
-                    }
+        final SpdxExpression expression = SpdxExpression.parse(licenseChoice.getExpression().getValue());
+        if (!isValidLicenseExpression(expression)) {
+            return EvaluationResult.failure(condition, component,
+                    "License expression [%s] is not valid".formatted(expression.toString()));
+        }
+        switch (expression) {
+            case SpdxCompoundExpression compoundExpression -> {
+                final EvaluationResult result = validateCompoundExpression(condition, component,
+                        compoundExpression, licensesOfGroup);
+                if (!result.isSuccess()) {
+                    return result;
                 }
             }
+            case SpdxSingleLicenseExpression singleLicenseExpression -> {
+                final List<String> componentLicenses = currentLicensesIds(component.getLicenses());
+                final EvaluationResult result = validateSingleLicenseExpression(
+                        condition,
+                        component,
+                        singleLicenseExpression,
+                        componentLicenses,
+                        licensesOfGroup
+                );
+                if (!result.isSuccess()) {
+                    return result;
+                }
+            }
+        }
 
         return EvaluationResult.success();
     }
 
     private boolean isValidLicenseExpression(final SpdxExpression expression) {
-        return expression.isValid(SpdxExpression.Strictness.ALLOW_LICENSEREF_EXCEPTIONS);
+        return expression.isValid(SpdxExpression.Strictness.ALLOW_DEPRECATED);
     }
 
     private EvaluationResult validateCompoundExpression(
@@ -192,7 +203,7 @@ public class LicenseGroupConditionEvaluator implements PolicyConditionEvaluator<
             final List<String> componentLicenses,
             final List<String> licensesOfGroup
     ) {
-        final String licenseId = expression.licenses().get(0);
+        final String licenseId = expression.licenses().getFirst();
         final boolean isLicenseOfGroup = licensesOfGroup.contains(licenseId);
         final boolean matches = CollectionUtils.isEmpty(componentLicenses) ? isLicenseOfGroup :
                 componentLicenses.contains(licenseId) && isLicenseOfGroup;
