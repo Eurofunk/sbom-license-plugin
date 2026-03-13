@@ -113,16 +113,16 @@ jreleaser {
             active.set(Active.ALWAYS)
             mavenCentral {
                 create("sonatype") {
-                    active.set(Active.RELEASE)
+                    active.set(Active.ALWAYS)
                     url.set("https://central.sonatype.com/api/v1/publisher")
                     stagingRepository(layout.buildDirectory.dir("staging-deploy").get().asFile.absolutePath)
                     sign.set(true)
                     snapshotSupported.set(true)
                 }
             }
-            nexus2 {
+            /*nexus2 {
                 create("ossrh") {
-                    active.set(Active.ALWAYS)
+                    active.set(Active.SNAPSHOT)
                     url.set("https://s01.oss.sonatype.org/service/local")
                     snapshotUrl.set("https://s01.oss.sonatype.org/content/repositories/snapshots")
                     snapshotSupported.set(true)
@@ -131,7 +131,7 @@ jreleaser {
                     stagingRepository(layout.buildDirectory.dir("staging-deploy").get().asFile.absolutePath)
                     sign.set(true)
                 }
-            }
+            }*/
         }
     }
 }
