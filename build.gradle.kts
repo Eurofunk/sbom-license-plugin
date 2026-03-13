@@ -108,11 +108,24 @@ jreleaser {
         armored.set(true)
     }
     deploy {
+        active.set(Active.ALWAYS)
         maven {
+            active.set(Active.ALWAYS)
             mavenCentral {
                 create("sonatype") {
-                    active.set(org.jreleaser.model.Active.ALWAYS)
+                    active.set(Active.RELEASE)
                     url.set("https://central.sonatype.com/api/v1/publisher")
+                    stagingRepository(layout.buildDirectory.dir("staging-deploy").get().asFile.absolutePath)
+                    sign.set(true)
+                }
+            }
+            nexus2 {
+                create("sonatype") {
+                    active.set(Active.SNAPSHOT)
+                    url.set("https://s01.oss.sonatype.org/service/local")
+                    snapshotUrl.set("https://s01.oss.sonatype.org/content/repositories/snapshots")
+                    closeRepository.set(false)
+                    releaseRepository.set(false)
                     stagingRepository(layout.buildDirectory.dir("staging-deploy").get().asFile.absolutePath)
                     sign.set(true)
                 }
